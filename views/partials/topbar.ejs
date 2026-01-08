@@ -1,0 +1,80 @@
+<header class="topbar">
+  <div class="inner">
+    <a class="logo" href="/" aria-label="FABIE Home">
+      <span class="logoMark"></span>
+      <span>FABIE</span>
+      <span class="badge basic" title="MVP Demo">MVP</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Home</a>
+      <a href="/marketplace" class="<%= currentPath === '/marketplace' || currentPath.startsWith('/dpp') ? 'active' : '' %>">Marketplace</a>
+      <a href="/ai/recommend" class="<%= currentPath.startsWith('/ai') ? 'active' : '' %>">AI Recommendations</a>
+      <% if (user && user.role === 'seller') { %>
+        <a href="/seller/dashboard" class="<%= currentPath.startsWith('/seller') ? 'active' : '' %>">Seller Dashboard</a>
+      <% } %>
+      <% if (user) { %>
+        <a href="/messages" class="<%= currentPath.startsWith('/messages') ? 'active' : '' %>">Messages</a>
+      <% } %>
+    </nav>
+    <div style="display: flex; gap: 10px; align-items: center">
+      <% if (user) { %>
+        <% if (user.role === 'seller') { %>
+          <a class="btn small primary" href="/seller/create">+ New Listing</a>
+        <% } %>
+        <div class="user-menu" style="position: relative;">
+          <button class="btn small" onclick="document.getElementById('userDropdown').classList.toggle('show')" style="display: flex; align-items: center; gap: 6px;">
+            <span class="avatar-small" style="width: 22px; height: 22px; border-radius: 50%; background: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--bg);">
+              <%= user.name.charAt(0).toUpperCase() %>
+            </span>
+            <span><%= user.name.split(' ')[0] %></span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div id="userDropdown" class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; background: #101f38; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 1000;">
+            <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+              <div style="font-weight: 500; font-size: 14px; color: #e8efff;"><%= user.name %></div>
+              <div style="font-size: 12px; color: #93a4c7;"><%= user.email %></div>
+              <div style="margin-top: 4px;">
+                <span class="badge <%= user.role === 'seller' ? 'good' : 'basic' %>" style="font-size: 10px;"><%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></span>
+              </div>
+            </div>
+            <a href="/auth/profile" style="display: block; padding: 10px 16px; font-size: 13px; color: #e8efff; text-decoration: none;" onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'" onmouseout="this.style.background='transparent'">
+              My Profile
+            </a>
+            <% if (user.role === 'seller') { %>
+              <a href="/seller/dashboard" style="display: block; padding: 10px 16px; font-size: 13px; color: #e8efff; text-decoration: none;" onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'" onmouseout="this.style.background='transparent'">
+                Seller Dashboard
+              </a>
+            <% } %>
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+              <a href="/auth/logout" style="display: block; padding: 10px 16px; font-size: 13px; color: #ef4444; text-decoration: none;" onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'" onmouseout="this.style.background='transparent'">
+                Sign Out
+              </a>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <a class="btn small" href="/auth/login">Sign In</a>
+        <a class="btn small primary" href="/auth/register">Register</a>
+      <% } %>
+    </div>
+  </div>
+</header>
+
+<style>
+  .dropdown-menu.show {
+    display: block !important;
+  }
+</style>
+
+<script>
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdown');
+    const userMenu = document.querySelector('.user-menu');
+    if (dropdown && userMenu && !userMenu.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+</script>

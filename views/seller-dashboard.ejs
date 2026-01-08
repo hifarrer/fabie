@@ -1,0 +1,122 @@
+<section class="grid" style="gap: 18px">
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="align-items: flex-start; justify-content: space-between">
+        <div>
+          <div class="kicker">Seller Dashboard</div>
+          <h2 class="h2" style="margin-top: 10px">My Listings</h2>
+          <p class="p">Create and manage Digital Product Passports, upload documentation, and track inquiries.</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <a class="btn primary" href="/seller/create">+ New DPP</a>
+          <a class="btn" href="/marketplace">View as Buyer</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid cols-4">
+    <div class="card">
+      <div class="pad" style="text-align: center;">
+        <div class="h1" style="font-size: 36px; color: var(--brand);"><%= stats.totalListings %></div>
+        <div class="p">Total Listings</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="pad" style="text-align: center;">
+        <div class="h1" style="font-size: 36px; color: var(--brand2);"><%= stats.activeListings %></div>
+        <div class="p">Active</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="pad" style="text-align: center;">
+        <div class="h1" style="font-size: 36px;"><%= stats.totalViews?.toLocaleString() || 0 %></div>
+        <div class="p">Total Views</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="pad" style="text-align: center;">
+        <div class="h1" style="font-size: 36px;"><%= stats.totalInquiries || 0 %></div>
+        <div class="p">Inquiries</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pad">
+      <% if (listings && listings.length > 0) { %>
+        <table class="table" aria-label="My listings table">
+          <tr>
+            <th>Listing</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Verification</th>
+            <th>Views</th>
+            <th>Inquiries</th>
+            <th>Actions</th>
+          </tr>
+          <% listings.forEach(listing => { %>
+            <tr>
+              <td>
+                <strong><%= listing.name %></strong>
+                <div class="p" style="font-size: 12px;">
+                  <% if (listing.specs?.lotNumber) { %>
+                    Lot #<%= listing.specs.lotNumber %>
+                  <% } else if (listing.specs?.make) { %>
+                    <%= listing.specs.make %> <%= listing.specs.model %>
+                  <% } else if (listing.specs?.material) { %>
+                    <%= listing.specs.material %>
+                  <% } %>
+                </div>
+              </td>
+              <td><%= listing.assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %></td>
+              <td>
+                <% if (listing.status === 'active') { %>
+                  <span class="badge verified">Active</span>
+                <% } else { %>
+                  <span class="badge basic">Draft</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (listing.verification?.tier === 'fully_verified') { %>
+                  <span class="badge verified">Fully Verified</span>
+                <% } else if (listing.verification?.tier === 'document_supported') { %>
+                  <span class="badge warn">Doc-Supported</span>
+                <% } else { %>
+                  <span class="badge basic">Basic</span>
+                <% } %>
+              </td>
+              <td><%= listing.views?.toLocaleString() || 0 %></td>
+              <td><%= listing.inquiries || 0 %></td>
+              <td style="white-space: nowrap">
+                <a class="btn small" href="/dpp/<%= listing.id %>">View</a>
+                <a class="btn small" href="/dpp/<%= listing.id %>/edit">Edit</a>
+                <% if (listing.nafta?.enabled) { %>
+                  <a class="btn small" href="/nafta/<%= listing.id %>">NAFTA</a>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </table>
+      <% } else { %>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          <div class="h3">No listings yet</div>
+          <p class="p">Create your first Digital Product Passport to get started.</p>
+          <a class="btn primary" href="/seller/create" style="margin-top: 16px;">Create Listing</a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>MVP Note:</strong> In production, listings would be filtered by authenticated seller. This demo shows all seeded listings for demonstration purposes.
+  </div>
+</section>
+
+

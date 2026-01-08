@@ -1,0 +1,200 @@
+<section class="grid" style="gap: 18px">
+  <div class="card">
+    <div class="pad">
+      <div class="kicker"><%= isEdit ? 'Edit' : 'Create' %> Digital Product Passport</div>
+      <h2 class="h2" style="margin-top: 10px">
+        <% if (isEdit) { %>
+          Edit: <%= dpp.name %>
+        <% } else { %>
+          New <%= assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %> Listing
+        <% } %>
+      </h2>
+    </div>
+  </div>
+
+  <form action="<%= isEdit ? '/dpp/' + dpp.id : '/dpp' %>" method="POST">
+    <input type="hidden" name="assetType" value="<%= assetType %>" />
+    
+    <div class="card" style="margin-bottom: 18px">
+      <div class="pad">
+        <div class="form-section-title">Basic Information</div>
+        <div class="form-grid cols-2">
+          <div class="field">
+            <label for="name">Listing Name *</label>
+            <input type="text" id="name" name="name" class="input" required
+              value="<%= dpp?.name || '' %>"
+              placeholder="e.g., 321 Stainless Steel Tubing" />
+          </div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status" class="input">
+              <option value="active" <%= dpp?.status === 'active' ? 'selected' : '' %>>Active</option>
+              <option value="draft" <%= dpp?.status === 'draft' ? 'selected' : '' %>>Draft</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top: 16px">
+          <label for="description">Description *</label>
+          <textarea id="description" name="description" class="input" required
+            placeholder="Detailed description of the product or service"><%= dpp?.description || '' %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 18px">
+      <div class="pad">
+        <div class="form-section-title">Seller Information</div>
+        <div class="form-grid cols-2">
+          <div class="field">
+            <label for="sellerName">Company Name</label>
+            <input type="text" id="sellerName" name="sellerName" class="input"
+              value="<%= dpp?.seller?.name || 'Demo Company' %>" />
+          </div>
+          <div class="field">
+            <label for="sellerLocation">Location</label>
+            <input type="text" id="sellerLocation" name="sellerLocation" class="input"
+              value="<%= dpp?.seller?.location || 'Ontario, Canada' %>" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 18px">
+      <div class="pad">
+        <div class="form-section-title">Specifications</div>
+        
+        <% if (assetType === 'raw_material' || assetType === 'finished_part') { %>
+          <div class="form-grid cols-2">
+            <div class="field">
+              <label for="material">Material</label>
+              <input type="text" id="material" name="material" class="input"
+                value="<%= dpp?.specs?.material || '' %>"
+                placeholder="e.g., 321 Stainless Steel" />
+            </div>
+            <div class="field">
+              <label for="form">Form</label>
+              <input type="text" id="form" name="form" class="input"
+                value="<%= dpp?.specs?.form || '' %>"
+                placeholder="e.g., Tubing, Sheet, Bar" />
+            </div>
+            <div class="field">
+              <label for="dimensions">Dimensions</label>
+              <input type="text" id="dimensions" name="dimensions" class="input"
+                value="<%= dpp?.specs?.dimensions || '' %>"
+                placeholder="e.g., 1.5&quot; OD × 0.065&quot; wall" />
+            </div>
+            <div class="field">
+              <label for="weight">Weight/Quantity</label>
+              <input type="text" id="weight" name="weight" class="input"
+                value="<%= dpp?.specs?.weight || '' %>"
+                placeholder="e.g., 18,000 lbs" />
+            </div>
+            <div class="field">
+              <label for="hsCode">HS Code</label>
+              <input type="text" id="hsCode" name="hsCode" class="input"
+                value="<%= dpp?.specs?.hsCode || '' %>"
+                placeholder="e.g., 7306.40" />
+            </div>
+          </div>
+        <% } else if (assetType === 'equipment') { %>
+          <div class="form-grid cols-2">
+            <div class="field">
+              <label for="make">Make</label>
+              <input type="text" id="make" name="make" class="input"
+                value="<%= dpp?.specs?.make || '' %>"
+                placeholder="e.g., Haas" />
+            </div>
+            <div class="field">
+              <label for="model">Model</label>
+              <input type="text" id="model" name="model" class="input"
+                value="<%= dpp?.specs?.model || '' %>"
+                placeholder="e.g., VF-2" />
+            </div>
+            <div class="field">
+              <label for="year">Year</label>
+              <input type="number" id="year" name="year" class="input"
+                value="<%= dpp?.specs?.year || '' %>"
+                placeholder="e.g., 2016" />
+            </div>
+            <div class="field">
+              <label for="hours">Hours</label>
+              <input type="number" id="hours" name="hours" class="input"
+                value="<%= dpp?.specs?.hours || '' %>"
+                placeholder="e.g., 6200" />
+            </div>
+          </div>
+        <% } else if (assetType === 'service') { %>
+          <div class="form-grid">
+            <div class="field">
+              <label for="capabilities">Capabilities</label>
+              <input type="text" id="capabilities" name="capabilities" class="input"
+                value="<%= dpp?.specs?.capabilities || '' %>"
+                placeholder="e.g., 60,000 PSI abrasive waterjet" />
+            </div>
+            <div class="field">
+              <label for="capacity">Capacity</label>
+              <input type="text" id="capacity" name="capacity" class="input"
+                value="<%= dpp?.specs?.capacity || '' %>"
+                placeholder="e.g., 6' × 12' cutting bed" />
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 18px">
+      <div class="pad">
+        <div class="form-section-title">Pricing & Availability</div>
+        <div class="form-grid cols-2">
+          <div class="field">
+            <label for="price">Price *</label>
+            <input type="number" id="price" name="price" class="input" step="0.01" required
+              value="<%= dpp?.pricing?.basePrice || '' %>"
+              placeholder="0.00" />
+          </div>
+          <div class="field">
+            <label for="priceUnit">Price Unit</label>
+            <select id="priceUnit" name="priceUnit" class="input">
+              <option value="unit" <%= dpp?.pricing?.unit === 'unit' ? 'selected' : '' %>>per unit</option>
+              <option value="lb" <%= dpp?.pricing?.unit === 'lb' ? 'selected' : '' %>>per lb</option>
+              <option value="kg" <%= dpp?.pricing?.unit === 'kg' ? 'selected' : '' %>>per kg</option>
+              <option value="piece" <%= dpp?.pricing?.unit === 'piece' ? 'selected' : '' %>>per piece</option>
+              <option value="hour" <%= dpp?.pricing?.unit === 'hour' ? 'selected' : '' %>>per hour</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="availabilityStatus">Availability</label>
+            <select id="availabilityStatus" name="availabilityStatus" class="input">
+              <option value="in_stock" <%= dpp?.availability?.status === 'in_stock' ? 'selected' : '' %>>In Stock</option>
+              <option value="made_to_order" <%= dpp?.availability?.status === 'made_to_order' ? 'selected' : '' %>>Made to Order</option>
+              <option value="available" <%= dpp?.availability?.status === 'available' ? 'selected' : '' %>>Available (Service)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="quantity">Quantity Available</label>
+            <input type="number" id="quantity" name="quantity" class="input"
+              value="<%= dpp?.availability?.quantity || '' %>"
+              placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="leadTime">Lead Time (days)</label>
+            <input type="number" id="leadTime" name="leadTime" class="input"
+              value="<%= dpp?.availability?.leadTimeDays || '7' %>" />
+          </div>
+          <div class="field">
+            <label for="minimumOrder">Minimum Order</label>
+            <input type="number" id="minimumOrder" name="minimumOrder" class="input"
+              value="<%= dpp?.availability?.minimumOrder || '1' %>" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content: space-between">
+      <a href="<%= isEdit ? '/dpp/' + dpp.id : '/seller/dashboard' %>" class="btn">Cancel</a>
+      <button type="submit" class="btn primary"><%= isEdit ? 'Update Listing' : 'Create Listing' %></button>
+    </div>
+  </form>
+</section>
+
+

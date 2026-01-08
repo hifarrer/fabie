@@ -1,0 +1,15 @@
+<section class="card">
+  <div class="pad" style="text-align: center; padding: 60px 24px;">
+    <div class="h1" style="font-size: 80px; color: var(--danger); margin-bottom: 0;">Error</div>
+    <h2 class="h2">Something Went Wrong</h2>
+    <p class="p" style="max-width: 400px; margin: 16px auto;">
+      <%= typeof message !== 'undefined' ? message : 'An unexpected error occurred.' %>
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+      <a class="btn primary" href="/">Go Home</a>
+      <a class="btn" href="javascript:history.back()">Go Back</a>
+    </div>
+  </div>
+</section>
+
+

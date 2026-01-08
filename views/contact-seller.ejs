@@ -1,0 +1,114 @@
+<section class="grid" style="gap: 18px">
+  <div class="card">
+    <div class="pad">
+      <div class="kicker">Contact Seller</div>
+      <h2 class="h2" style="margin-top: 10px">Send inquiry for: <%= dpp.name %></h2>
+      <p class="p"><%= dpp.seller?.name %> • <%= dpp.seller?.location %></p>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="pad">
+        <div class="h2">Send a Message</div>
+        <form action="/messages/start" method="POST">
+          <input type="hidden" name="dppId" value="<%= dpp.id %>" />
+          
+          <div class="field">
+            <label for="message">Your Message *</label>
+            <textarea 
+              id="message" 
+              name="message" 
+              class="input" 
+              required
+              placeholder="Hi, I'm interested in your <%= dpp.name %>. Could you please confirm..."
+              style="min-height: 150px;"
+            ></textarea>
+          </div>
+
+          <div class="notice" style="margin-top: 12px">
+            <strong>Suggested topics:</strong>
+            <ul style="margin: 8px 0 0 18px; line-height: 1.6;">
+              <li>Confirm availability and lead time</li>
+              <li>Request pricing for specific quantity</li>
+              <li>Ask about certifications or documentation</li>
+              <li>Inquire about shipping options</li>
+              <% if (dpp.nafta?.enabled) { %>
+                <li>Verify NAFTA/CUSMA qualification details</li>
+              <% } %>
+            </ul>
+          </div>
+
+          <div class="row" style="margin-top: 16px; justify-content: space-between">
+            <a class="btn" href="/dpp/<%= dpp.id %>">← Back to Listing</a>
+            <button type="submit" class="btn primary">Send Message</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pad">
+        <div class="h2">Listing Summary</div>
+        <table class="table">
+          <tr>
+            <th>Asset Type</th>
+            <td><%= dpp.assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %></td>
+          </tr>
+          <tr>
+            <th>Price</th>
+            <td>
+              <%= dpp.pricing?.currency || 'CAD' %> $<%= dpp.pricing?.basePrice?.toLocaleString() || '0' %>
+              <% if (dpp.pricing?.unit) { %> / <%= dpp.pricing.unit %><% } %>
+            </td>
+          </tr>
+          <tr>
+            <th>Availability</th>
+            <td>
+              <% if (dpp.availability?.status === 'in_stock') { %>
+                In Stock (<%= dpp.availability.quantity?.toLocaleString() || '?' %> <%= dpp.pricing?.unit || 'units' %>)
+              <% } else { %>
+                Made to Order
+              <% } %>
+            </td>
+          </tr>
+          <tr>
+            <th>Lead Time</th>
+            <td><%= dpp.availability?.leadTimeDays || '?' %> days</td>
+          </tr>
+          <tr>
+            <th>Verification</th>
+            <td>
+              <% if (dpp.verification?.tier === 'fully_verified') { %>
+                <span class="badge verified">Fully Verified</span>
+              <% } else if (dpp.verification?.tier === 'document_supported') { %>
+                <span class="badge warn">Document-Supported</span>
+              <% } else { %>
+                <span class="badge basic">Basic</span>
+              <% } %>
+            </td>
+          </tr>
+          <% if (dpp.nafta?.enabled) { %>
+            <tr>
+              <th>NAFTA Status</th>
+              <td>
+                <% if (dpp.nafta.qualifies) { %>
+                  <span class="badge verified">RVC <%= dpp.nafta.rvc %>% • Qualifies</span>
+                <% } else { %>
+                  <span class="badge danger">Does Not Qualify</span>
+                <% } %>
+              </td>
+            </tr>
+          <% } %>
+        </table>
+
+        <div class="notice" style="margin-top: 12px">
+          <strong>Note:</strong> Your message will start a conversation thread. 
+          The seller will be notified and can respond directly through the platform.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+

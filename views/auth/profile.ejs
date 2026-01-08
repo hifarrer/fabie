@@ -1,0 +1,116 @@
+<section class="grid" style="max-width: 600px; margin: 0 auto;">
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <div>
+          <div class="kicker">
+            <% if (user.role === 'seller') { %>
+              <span style="color: var(--brand2);">Seller Account</span>
+            <% } else { %>
+              <span style="color: var(--brand);">Buyer Account</span>
+            <% } %>
+          </div>
+          <h1 class="h2" style="margin-top: 10px;">My Profile</h1>
+        </div>
+        <a href="/auth/logout" class="btn small">Sign Out</a>
+      </div>
+
+      <% if (error) { %>
+        <div class="notice" style="border-color: var(--danger); margin-bottom: 16px;">
+          <strong style="color: var(--danger);">Error:</strong> <%= error %>
+        </div>
+      <% } %>
+
+      <% if (success) { %>
+        <div class="notice" style="border-color: var(--brand2); margin-bottom: 16px;">
+          <strong style="color: var(--brand2);">Success:</strong> <%= success %>
+        </div>
+      <% } %>
+
+      <form action="/auth/profile" method="POST">
+        <div class="form-section-title">Account Information</div>
+        
+        <div class="field" style="margin-bottom: 16px;">
+          <label>Email Address</label>
+          <input type="email" class="input" value="<%= user.email %>" disabled style="opacity: 0.6;" />
+          <small class="p" style="margin-top: 4px;">Email cannot be changed</small>
+        </div>
+
+        <div class="field" style="margin-bottom: 16px;">
+          <label for="name">Full Name</label>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            class="input" 
+            value="<%= user.name %>"
+            required 
+          />
+        </div>
+
+        <div class="form-section-title" style="margin-top: 24px;">Company Information</div>
+
+        <div class="field" style="margin-bottom: 16px;">
+          <label for="company">Company Name</label>
+          <input 
+            type="text" 
+            id="company" 
+            name="company" 
+            class="input" 
+            value="<%= user.company || '' %>"
+          />
+        </div>
+
+        <div class="form-grid cols-2" style="margin-bottom: 16px;">
+          <div class="field">
+            <label for="location">Location</label>
+            <input 
+              type="text" 
+              id="location" 
+              name="location" 
+              class="input" 
+              value="<%= user.location || '' %>"
+            />
+          </div>
+          <div class="field">
+            <label for="phone">Phone Number</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              name="phone" 
+              class="input" 
+              value="<%= user.phone || '' %>"
+            />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 24px; justify-content: space-between;">
+          <a href="/" class="btn">← Back to Home</a>
+          <button type="submit" class="btn primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pad">
+      <div class="h3">Account Details</div>
+      <table class="table" style="margin-top: 12px;">
+        <tr>
+          <th>Account Type</th>
+          <td><%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></td>
+        </tr>
+        <tr>
+          <th>User ID</th>
+          <td><code style="font-size: 12px;"><%= user.id %></code></td>
+        </tr>
+        <tr>
+          <th>Member Since</th>
+          <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+

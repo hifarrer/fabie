@@ -1,0 +1,154 @@
+<section class="split">
+  <aside class="card sidebar">
+    <div class="pad">
+      <div class="h2">Filters</div>
+      <form action="/marketplace" method="GET">
+        <% if (query) { %>
+          <input type="hidden" name="q" value="<%= query %>" />
+        <% } %>
+        
+        <div class="field">
+          <label>Asset type</label>
+          <select name="type" onchange="this.form.submit()">
+            <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>All Types</option>
+            <option value="raw_material" <%= filters.type === 'raw_material' ? 'selected' : '' %>>Raw Materials</option>
+            <option value="finished_part" <%= filters.type === 'finished_part' ? 'selected' : '' %>>Finished Parts</option>
+            <option value="equipment" <%= filters.type === 'equipment' ? 'selected' : '' %>>Equipment</option>
+            <option value="service" <%= filters.type === 'service' ? 'selected' : '' %>>Services</option>
+          </select>
+        </div>
+
+        <div class="row" style="margin-top: 12px">
+          <div class="field" style="flex: 1">
+            <label>Location</label>
+            <select name="location" onchange="this.form.submit()">
+              <option value="all" <%= filters.location === 'all' ? 'selected' : '' %>>All Ontario</option>
+              <option value="Toronto" <%= filters.location === 'Toronto' ? 'selected' : '' %>>GTA / Toronto</option>
+              <option value="Hamilton" <%= filters.location === 'Hamilton' ? 'selected' : '' %>>Hamilton</option>
+              <option value="Cambridge" <%= filters.location === 'Cambridge' ? 'selected' : '' %>>Cambridge</option>
+              <option value="Kitchener" <%= filters.location === 'Kitchener' ? 'selected' : '' %>>Kitchener-Waterloo</option>
+              <option value="Mississauga" <%= filters.location === 'Mississauga' ? 'selected' : '' %>>Mississauga</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 12px">
+          <label>NAFTA Status</label>
+          <select name="nafta" onchange="this.form.submit()">
+            <option value="any" <%= filters.nafta === 'any' ? 'selected' : '' %>>Any</option>
+            <option value="qualifies" <%= filters.nafta === 'qualifies' ? 'selected' : '' %>>Qualifies</option>
+            <option value="does_not_qualify" <%= filters.nafta === 'does_not_qualify' ? 'selected' : '' %>>Does Not Qualify</option>
+          </select>
+        </div>
+
+        <div class="field" style="margin-top: 12px">
+          <label>Verification</label>
+          <select name="verification" onchange="this.form.submit()">
+            <option value="any" <%= filters.verification === 'any' ? 'selected' : '' %>>Any</option>
+            <option value="document_supported" <%= filters.verification === 'document_supported' ? 'selected' : '' %>>Document-Supported+</option>
+            <option value="fully_verified" <%= filters.verification === 'fully_verified' ? 'selected' : '' %>>Fully Verified+</option>
+          </select>
+        </div>
+
+        <noscript>
+          <button type="submit" class="btn block" style="margin-top: 14px">Apply Filters</button>
+        </noscript>
+      </form>
+
+      <div class="notice" style="margin-top: 14px">
+        <strong><%= dpps.length %></strong> listing<%= dpps.length !== 1 ? 's' : '' %> found
+      </div>
+    </div>
+  </aside>
+
+  <section class="grid" style="gap: 18px">
+    <div class="card">
+      <div class="pad">
+        <div class="row" style="align-items: flex-end">
+          <div class="field" style="flex: 1">
+            <label for="queryBox">Search</label>
+            <form action="/marketplace" method="GET" style="display: flex; gap: 10px;">
+              <input
+                id="queryBox"
+                name="q"
+                class="input"
+                placeholder="Search materials, equipment, services…"
+                value="<%= query %>"
+              />
+              <button type="submit" class="btn primary">Search</button>
+            </form>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <a class="btn good" href="/ai/recommend<%= query ? '?q=' + encodeURIComponent(query) : '' %>">AI Suggestions</a>
+          </div>
+        </div>
+        <% if (query) { %>
+          <div class="p" style="margin-top: 10px">Showing results for: "<strong><%= query %></strong>"</div>
+        <% } else { %>
+          <div class="p" style="margin-top: 10px">Showing all listings</div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (dpps.length === 0) { %>
+      <div class="card">
+        <div class="pad empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <div class="h3">No listings found</div>
+          <p class="p">Try adjusting your search or filters</p>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="grid cols-3">
+        <% dpps.forEach(dpp => { %>
+        <a class="card" href="/dpp/<%= dpp.id %>">
+          <div class="pad">
+            <div class="cardHeader">
+              <div>
+                <div class="h3"><%= dpp.name %></div>
+                <p class="p"><%= dpp.seller?.name %> • <%= dpp.seller?.location %></p>
+              </div>
+              <% if (dpp.verification?.tier === 'fully_verified') { %>
+                <span class="badge verified">Fully Verified</span>
+              <% } else if (dpp.verification?.tier === 'document_supported') { %>
+                <span class="badge warn">Doc-Supported</span>
+              <% } else { %>
+                <span class="badge basic">Basic</span>
+              <% } %>
+            </div>
+            <div class="p" style="margin-top: 10px">
+              <% if (dpp.specs?.material) { %>
+                <%= dpp.specs.material %>
+              <% } else if (dpp.specs?.make) { %>
+                <%= dpp.specs.make %> <%= dpp.specs.model %> (<%= dpp.specs.year %>)
+              <% } else if (dpp.specs?.capabilities) { %>
+                <%= dpp.specs.capabilities %>
+              <% } else { %>
+                <%= dpp.description?.substring(0, 100) %>...
+              <% } %>
+            </div>
+            <div class="row" style="margin-top: 12px; align-items: center; justify-content: space-between">
+              <% if (dpp.nafta?.qualifies) { %>
+                <span class="badge verified">NAFTA: <%= dpp.nafta.rvc %>%</span>
+              <% } else if (dpp.availability?.status === 'in_stock') { %>
+                <span class="badge">In Stock</span>
+              <% } else { %>
+                <span class="badge">Lead: <%= dpp.availability?.leadTimeDays || '?' %> days</span>
+              <% } %>
+              <span class="badge">
+                <%= dpp.pricing?.currency || 'CAD' %> $<%= dpp.pricing?.basePrice?.toLocaleString() || '0' %>
+                <% if (dpp.pricing?.unit) { %>/<%= dpp.pricing.unit %><% } %>
+              </span>
+            </div>
+          </div>
+        </a>
+        <% }); %>
+      </div>
+    <% } %>
+  </section>
+</section>
+
+

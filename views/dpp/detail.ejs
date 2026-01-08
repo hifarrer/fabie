@@ -1,0 +1,162 @@
+<section class="grid" style="gap: 18px">
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="align-items: flex-start; justify-content: space-between">
+        <div>
+          <div class="kicker">Digital Product Passport (DPP) • <%= dpp.assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %></div>
+          <h2 class="h2" style="margin-top: 10px"><%= dpp.name %></h2>
+          <p class="p"><%= dpp.seller?.name %> • <%= dpp.seller?.location %></p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px">
+            <% if (dpp.verification?.tier === 'fully_verified') { %>
+              <span class="badge verified">Fully Verified</span>
+            <% } else if (dpp.verification?.tier === 'document_supported') { %>
+              <span class="badge warn">Document-Supported</span>
+            <% } else { %>
+              <span class="badge basic">Basic</span>
+            <% } %>
+            <% if (dpp.nafta?.qualifies) { %>
+              <span class="badge verified">NAFTA: RVC <%= dpp.nafta.rvc %>% • Qualifies</span>
+            <% } else if (dpp.nafta?.enabled) { %>
+              <span class="badge danger">NAFTA: Does Not Qualify</span>
+            <% } %>
+            <span class="badge">
+              <%= dpp.pricing?.currency || 'CAD' %> $<%= dpp.pricing?.basePrice?.toLocaleString() || '0' %>
+              <% if (dpp.pricing?.unit) { %> / <%= dpp.pricing.unit %><% } %>
+            </span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 220px">
+          <a class="btn primary" href="/messages/contact/<%= dpp.id %>">Contact Seller</a>
+          <% if (dpp.nafta?.enabled) { %>
+            <a class="btn" href="/nafta/<%= dpp.id %>">View NAFTA/CUSMA</a>
+          <% } %>
+          <a class="btn good" href="/ai/recommend?q=<%= encodeURIComponent((dpp.specs?.material || dpp.name) + ' ' + (dpp.specs?.maxTemp ? dpp.specs.maxTemp + 'F' : '')) %>">AI Analysis</a>
+        </div>
+      </div>
+      <div class="notice" style="margin-top: 14px">
+        <strong>Description:</strong> <%= dpp.description %>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="pad">
+        <div class="h2">Specifications</div>
+        <table class="table" aria-label="Specifications table">
+          <% if (dpp.specs?.material) { %>
+            <tr><th>Material</th><td><%= dpp.specs.material %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.form) { %>
+            <tr><th>Form</th><td><%= dpp.specs.form %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.dimensions) { %>
+            <tr><th>Dimensions</th><td><%= dpp.specs.dimensions %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.weight) { %>
+            <tr><th>Quantity/Weight</th><td><%= dpp.specs.weight %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.make) { %>
+            <tr><th>Make/Model</th><td><%= dpp.specs.make %> <%= dpp.specs.model %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.year) { %>
+            <tr><th>Year</th><td><%= dpp.specs.year %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.hours) { %>
+            <tr><th>Hours</th><td><%= dpp.specs.hours?.toLocaleString() %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.capabilities) { %>
+            <tr><th>Capabilities</th><td><%= dpp.specs.capabilities %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.capacity) { %>
+            <tr><th>Capacity</th><td><%= dpp.specs.capacity %></td></tr>
+          <% } %>
+          <% if (dpp.specs?.hsCode) { %>
+            <tr><th>HS Code</th><td><%= dpp.specs.hsCode %></td></tr>
+          <% } %>
+          <tr><th>Availability</th><td>
+            <% if (dpp.availability?.status === 'in_stock') { %>
+              In Stock (<%= dpp.availability.quantity?.toLocaleString() %> <%= dpp.pricing?.unit || 'units' %>)
+            <% } else { %>
+              Made to Order
+            <% } %>
+          </td></tr>
+          <tr><th>Lead Time</th><td><%= dpp.availability?.leadTimeDays || '?' %> days</td></tr>
+          <% if (dpp.availability?.minimumOrder) { %>
+            <tr><th>Min. Order</th><td><%= dpp.availability.minimumOrder %> <%= dpp.pricing?.unit || 'units' %></td></tr>
+          <% } %>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pad">
+        <div class="h2">Documents</div>
+        <% if (dpp.documents && dpp.documents.length > 0) { %>
+          <div class="grid" style="gap: 12px">
+            <% dpp.documents.forEach(doc => { %>
+              <div class="card" style="box-shadow: none">
+                <div class="pad sm">
+                  <div class="cardHeader">
+                    <div>
+                      <div class="h3"><%= doc.name %></div>
+                      <p class="p"><%= doc.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %></p>
+                    </div>
+                    <% if (doc.status === 'validated') { %>
+                      <span class="badge verified">Validated</span>
+                    <% } else if (doc.status === 'pending') { %>
+                      <span class="badge warn">Pending</span>
+                    <% } else { %>
+                      <span class="badge basic">Uploaded</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="notice">No documents uploaded yet.</div>
+        <% } %>
+
+        <form action="/dpp/<%= dpp.id %>/documents" method="POST" enctype="multipart/form-data" style="margin-top: 12px">
+          <div class="field">
+            <label>Upload a document</label>
+            <input type="file" name="document" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="input" />
+          </div>
+          <div class="row" style="margin-top: 12px">
+            <select name="documentType" class="input" style="flex: 1">
+              <option value="mill_cert">Mill Certificate</option>
+              <option value="calibration_cert">Calibration Certificate</option>
+              <option value="capability_statement">Capability Statement</option>
+              <option value="ppap">PPAP Package</option>
+              <option value="iso_cert">ISO Certificate</option>
+              <option value="photo">Photo</option>
+              <option value="other">Other</option>
+            </select>
+            <button type="submit" class="btn">Upload</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="justify-content: space-between; align-items: center">
+        <div>
+          <span class="p"><%= dpp.views || 0 %> views • <%= dpp.inquiries || 0 %> inquiries</span>
+        </div>
+        <div style="display: flex; gap: 10px">
+          <a class="btn" href="/dpp/<%= dpp.id %>/edit">Edit Listing</a>
+          <% if (!dpp.nafta?.enabled) { %>
+            <form action="/nafta/<%= dpp.id %>/enable" method="POST" style="display: inline">
+              <button type="submit" class="btn">Enable NAFTA Tracking</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+

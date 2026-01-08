@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>FABIE • Seller Dashboard</title>
+  <style>
+:root{
+  --bg:#0b1220;
+  --panel:#0f1a2e;
+  --card:#101f38;
+  --muted:#93a4c7;
+  --text:#e8efff;
+  --brand:#3b82f6;
+  --brand2:#22c55e;
+  --warn:#f59e0b;
+  --danger:#ef4444;
+  --border: rgba(255,255,255,.10);
+  --shadow: 0 12px 30px rgba(0,0,0,.35);
+  --radius: 16px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,.25), transparent 55%),
+              radial-gradient(900px 500px at 80% 20%, rgba(34,197,94,.16), transparent 60%),
+              linear-gradient(180deg, var(--bg), #070b14 70%);
+  color:var(--text);
+}
+
+a{color:inherit; text-decoration:none}
+.container{max-width:1200px; margin:0 auto; padding:24px}
+
+.topbar{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter: blur(10px);
+  background: rgba(7,11,20,.65);
+  border-bottom:1px solid var(--border);
+}
+.topbar .inner{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:14px 24px;
+  max-width:1200px; margin:0 auto;
+}
+.logo{
+  display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.5px;
+}
+.logoMark{
+  width:28px; height:28px; border-radius:10px;
+  background: linear-gradient(135deg, var(--brand), #7c3aed);
+  box-shadow: 0 10px 25px rgba(59,130,246,.25);
+}
+.nav{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.nav a{
+  padding:8px 10px; border-radius:10px;
+  color:var(--muted);
+}
+.nav a:hover{background:rgba(255,255,255,.06); color:var(--text)}
+.nav a.active{background:rgba(59,130,246,.16); color:var(--text); border:1px solid rgba(59,130,246,.35)}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; padding:10px 14px; border-radius:12px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color:var(--text);
+  cursor:pointer;
+}
+.btn:hover{background:rgba(255,255,255,.10)}
+.btn.primary{
+  background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(124,58,237,.95));
+  border-color: rgba(255,255,255,.14);
+}
+.btn.good{
+  background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(16,185,129,.95));
+  border-color: rgba(255,255,255,.14);
+}
+.btn.ghost{background:transparent}
+.btn.small{padding:8px 10px; border-radius:10px; font-size:13px}
+.btn.block{width:100%}
+
+.grid{
+  display:grid;
+  gap:18px;
+}
+.grid.cols-2{grid-template-columns: repeat(2, minmax(0,1fr))}
+.grid.cols-3{grid-template-columns: repeat(3, minmax(0,1fr))}
+.grid.cols-4{grid-template-columns: repeat(4, minmax(0,1fr))}
+@media (max-width: 980px){
+  .grid.cols-3, .grid.cols-4{grid-template-columns: repeat(2, minmax(0,1fr))}
+}
+@media (max-width: 720px){
+  .grid.cols-2, .grid.cols-3, .grid.cols-4{grid-template-columns: 1fr}
+  .topbar .inner{padding:12px 14px}
+}
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card .pad{padding:18px}
+.card .pad.sm{padding:14px}
+.cardHeader{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+}
+.h1{
+  font-size:44px; line-height:1.05; margin:0 0 10px 0; letter-spacing:-.8px;
+}
+.h2{font-size:24px; margin:0 0 10px 0}
+.h3{font-size:16px; margin:0 0 6px 0; letter-spacing:.2px}
+.p{color:var(--muted); margin:0; line-height:1.55}
+.kicker{
+  display:inline-flex; gap:8px; align-items:center;
+  padding:6px 10px; border:1px solid var(--border); border-radius:999px;
+  color:var(--muted); font-size:12px;
+  background:rgba(255,255,255,.03);
+}
+.badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px; border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.04);
+  color:var(--muted); font-size:12px;
+}
+.badge.verified{background:rgba(34,197,94,.12); color:#c8f6dc; border-color:rgba(34,197,94,.25)}
+.badge.basic{background:rgba(148,163,184,.10); color:#dbe7ff; border-color:rgba(148,163,184,.22)}
+.badge.warn{background:rgba(245,158,11,.12); color:#ffe9c1; border-color:rgba(245,158,11,.25)}
+.badge.danger{background:rgba(239,68,68,.12); color:#ffd1d1; border-color:rgba(239,68,68,.25)}
+
+.input, select{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  outline:none;
+}
+label{display:block; font-size:13px; color:var(--muted); margin:0 0 8px 2px}
+.field{display:flex; flex-direction:column; gap:8px}
+.row{display:flex; gap:12px}
+@media (max-width:720px){.row{flex-direction:column}}
+
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background: rgba(255,255,255,.03);
+}
+.table th, .table td{
+  padding:12px 12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  text-align:left;
+  font-size:14px;
+}
+.table th{color:#cfe0ff; font-weight:700; background: rgba(255,255,255,.05)}
+.table tr:last-child td{border-bottom:none}
+
+.split{
+  display:grid;
+  grid-template-columns: 340px 1fr;
+  gap:18px;
+}
+@media (max-width:980px){.split{grid-template-columns:1fr}}
+
+.sidebar{
+  position:sticky; top:86px;
+  align-self:start;
+}
+@media (max-width:980px){.sidebar{position:relative; top:auto}}
+
+.hero{
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:"";
+  position:absolute; inset:-120px -120px auto -120px;
+  height:420px;
+  background: radial-gradient(closest-side, rgba(59,130,246,.35), transparent 65%);
+  filter: blur(0px);
+}
+.hero::after{
+  content:"";
+  position:absolute; inset:auto -160px -160px auto;
+  width:520px; height:520px;
+  background: radial-gradient(closest-side, rgba(34,197,94,.20), transparent 65%);
+}
+.hero .pad{position:relative}
+
+.mini{
+  display:flex; gap:12px; align-items:center;
+}
+.icon{
+  width:42px; height:42px; border-radius:14px;
+  display:grid; place-items:center;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+}
+.icon svg{opacity:.95}
+
+.footer{
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  margin-top:28px;
+  padding:18px 0;
+  font-size:12px;
+  display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+}
+
+.notice{
+  border:1px dashed rgba(255,255,255,.18);
+  background: rgba(255,255,255,.03);
+  border-radius: 14px;
+  padding:12px 14px;
+  color: var(--muted);
+  font-size:13px;
+}
+
+.toast{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(15,26,46,.92);
+  box-shadow: var(--shadow);
+  color: #e8efff;
+  max-width: 360px;
+  display:none;
+}
+.toast.show{display:block}
+.toast .t{font-weight:800; margin:0 0 4px 0}
+.toast .m{margin:0; color:var(--muted); font-size:13px; line-height:1.35}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="inner">
+      <a class="logo" href="index.html" aria-label="FABIE Home">
+        <span class="logoMark"></span>
+        <span>FABIE</span>
+        <span class="badge basic" title="Concept Prototype">Concept MVP</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="index.html" class="">Landing</a>
+<a href="marketplace.html" class="">Marketplace</a>
+<a href="dpp.html" class="">DPP</a>
+<a href="nafta.html" class="">NAFTA/CUSMA</a>
+<a href="ai-recommendation.html" class="">AI Recommendation</a>
+<a href="seller-dashboard.html" class="active">Seller Dashboard</a>
+<a href="messaging.html" class="">Messaging</a>
+      </nav>
+      <div style="display:flex; gap:10px; align-items:center">
+        <button class="btn small ghost js-demo" data-action="Note" data-msg="This is a static HTML concept demo (no backend).">Demo Mode</button>
+        <a class="btn small primary" href="seller-dashboard.html">Seller View</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    
+<section class="grid" style="gap:18px">
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="align-items:flex-start; justify-content:space-between">
+        <div>
+          <div class="kicker">Seller Dashboard</div>
+          <h2 class="h2" style="margin-top:10px">My Listings</h2>
+          <p class="p">Create and manage Digital Product Passports, upload documentation, and track inquiries.</p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn primary js-demo" data-action="Create Listing" data-msg="In production, this opens the DPP creation wizard for the chosen asset type.">+ New DPP</button>
+          <a class="btn" href="marketplace.html">View as buyer</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pad">
+      <table class="table" aria-label="My listings table">
+        <tr>
+          <th>Listing</th><th>Type</th><th>Status</th><th>Verification</th><th>Views</th><th>Inquiries</th><th>Actions</th>
+        </tr>
+        <tr>
+          <td><strong>321 Stainless Steel Tubing</strong><div class="p">Lot #TD‑321‑18000</div></td>
+          <td>Raw Material</td>
+          <td><span class="badge verified">Active</span></td>
+          <td><span class="badge warn">Document‑Supported</span></td>
+          <td>1,284</td>
+          <td>14</td>
+          <td style="white-space:nowrap">
+            <a class="btn small" href="dpp.html">View</a>
+            <button class="btn small js-demo" data-action="Edit" data-msg="Edit DPP fields and re-upload documents.">Edit</button>
+            <a class="btn small" href="nafta.html">NAFTA</a>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Waterjet Cutting Service</strong><div class="p">60k PSI • 6’×12’ bed</div></td>
+          <td>Service</td>
+          <td><span class="badge verified">Active</span></td>
+          <td><span class="badge verified">Fully Verified</span></td>
+          <td>932</td>
+          <td>21</td>
+          <td style="white-space:nowrap">
+            <a class="btn small" href="dpp.html#service">View</a>
+            <button class="btn small js-demo" data-action="Edit" data-msg="Update capabilities, lead time, or pricing.">Edit</button>
+            <button class="btn small js-demo" data-action="Availability" data-msg="In production, you can manage available capacity by week.">Capacity</button>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Used CNC Milling Machine</strong><div class="p">Haas VF‑2 • 2016</div></td>
+          <td>Equipment</td>
+          <td><span class="badge">Draft</span></td>
+          <td><span class="badge basic">Basic</span></td>
+          <td>0</td>
+          <td>0</td>
+          <td style="white-space:nowrap">
+            <a class="btn small" href="dpp.html#equipment">Preview</a>
+            <button class="btn small js-demo" data-action="Publish" data-msg="Publishing makes the DPP visible in search results.">Publish</button>
+            <button class="btn small js-demo" data-action="Request inspection" data-msg="Phase 2: third‑party certification workflows.">Inspection</button>
+          </td>
+        </tr>
+      </table>
+
+      <div class="notice" style="margin-top:12px">
+        <strong>MVP note:</strong> For low-cost builds, the dashboard can be mostly CRUD + document upload + simple counters.
+      </div>
+    </div>
+  </div>
+</section>
+
+    <div class="footer">
+      <div>© 2026 FABIE • Concept MVP UI</div>
+      <div>Tip: Use the search boxes to jump between demo pages.</div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+    <div id="toastTitle" class="t">Demo</div>
+    <p id="toastMsg" class="m"></p>
+  </div>
+
+  <script>
+(function(){
+  const $ = (sel, root=document)=>root.querySelector(sel);
+  const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
+  const toast = $("#toast");
+  const toastTitle = $("#toastTitle");
+  const toastMsg = $("#toastMsg");
+  function showToast(title, msg){
+    if(!toast) return;
+    toastTitle.textContent = title || "Demo";
+    toastMsg.textContent = msg || "";
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove("show"), 2600);
+  }
+  window.FabieDemo = { showToast };
+
+  // Simple search box behavior
+  $$(".js-search").forEach(inp=>{
+    inp.addEventListener("keydown", (e)=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        const q = inp.value.trim();
+        if(!q){ showToast("Search", "Type something like: 321 stainless 1500F exhaust"); return; }
+        // store in session and go to marketplace
+        sessionStorage.setItem("fabie_query", q);
+        window.location.href = "marketplace.html?q=" + encodeURIComponent(q);
+      }
+    });
+  });
+
+  // Fake form submits
+  $$(".js-demo").forEach(el=>{
+    el.addEventListener("click", (e)=>{
+      const action = el.getAttribute("data-action") || "Action";
+      const msg = el.getAttribute("data-msg") || "This is a concept MVP demo (no backend).";
+      showToast(action, msg);
+    });
+  });
+
+  // Populate query on marketplace
+  const qp = new URLSearchParams(location.search);
+  const q = qp.get("q") || sessionStorage.getItem("fabie_query") || "";
+  const qBox = $("#queryBox");
+  if(qBox) qBox.value = q;
+  const qLabel = $("#queryLabel");
+  if(qLabel && q) qLabel.textContent = `Showing results for: “${q}”`;
+
+  // Simple “Apply filters” pill
+  const applyBtn = $("#applyFilters");
+  if(applyBtn){
+    applyBtn.addEventListener("click", ()=>{
+      showToast("Filters applied", "This demo updates UI only.");
+    });
+  }
+
+  // NAFTA calc demo
+  const calcBtn = $("#calcNafta");
+  if(calcBtn){
+    calcBtn.addEventListener("click", ()=>{
+      showToast("RVC calculated", "Demo calculation refreshed.");
+    });
+  }
+
+  // Messaging demo
+  const sendBtn = $("#sendMsg");
+  if(sendBtn){
+    sendBtn.addEventListener("click", ()=>{
+      const box = $("#msgBox");
+      const text = box.value.trim();
+      if(!text){ showToast("Message", "Type a message first."); return; }
+      const list = $("#thread");
+      const item = document.createElement("div");
+      item.className = "card";
+      item.innerHTML = `<div class="pad sm"><div class="h3" style="margin-bottom:2px">You</div>
+        <div class="p" style="color:#dbe7ff">${escapeHtml(text)}</div>
+        <div class="p" style="font-size:12px; margin-top:8px">${new Date().toLocaleString()}</div></div>`;
+      list.prepend(item);
+      box.value="";
+      showToast("Sent", "Demo message added locally.");
+    });
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+  }
+})();
+</script>
+</body>
+</html>

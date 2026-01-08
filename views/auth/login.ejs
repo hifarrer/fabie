@@ -1,0 +1,71 @@
+<section class="grid" style="max-width: 480px; margin: 0 auto;">
+  <div class="card">
+    <div class="pad">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div class="kicker" style="justify-content: center;">Welcome Back</div>
+        <h1 class="h2" style="margin-top: 10px;">Sign In to FABIE</h1>
+        <p class="p">Access the manufacturing marketplace</p>
+      </div>
+
+      <% if (error) { %>
+        <div class="notice" style="border-color: var(--danger); margin-bottom: 16px;">
+          <strong style="color: var(--danger);">Error:</strong> <%= error %>
+        </div>
+      <% } %>
+
+      <% if (success) { %>
+        <div class="notice" style="border-color: var(--brand2); margin-bottom: 16px;">
+          <strong style="color: var(--brand2);">Success:</strong> <%= success %>
+        </div>
+      <% } %>
+
+      <form action="/auth/login" method="POST">
+        <div class="field" style="margin-bottom: 16px;">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="input" 
+            required 
+            placeholder="you@company.com"
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="field" style="margin-bottom: 16px;">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="input" 
+            required 
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" class="btn primary block" style="margin-top: 8px;">
+          Sign In
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+        <p class="p">Don't have an account?</p>
+        <div class="row" style="margin-top: 12px; justify-content: center;">
+          <a class="btn" href="/auth/register?role=buyer">Register as Buyer</a>
+          <a class="btn good" href="/auth/register?role=seller">Register as Seller</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice" style="text-align: center;">
+    <strong>Demo Accounts:</strong><br>
+    Seller: tom@thermaldyne.com (any password)<br>
+    Buyer: john@techworks.com (any password)
+  </div>
+</section>
+
+

@@ -1,0 +1,177 @@
+{
+  "materials": {
+    "321_stainless": {
+      "name": "321 Stainless Steel",
+      "maxTemp": 1500,
+      "oxidationResistance": "moderate",
+      "costPerLb": 9.80,
+      "serviceLifeYears": 3,
+      "description": "Titanium-stabilized austenitic stainless steel with good high-temperature strength"
+    },
+    "304_stainless": {
+      "name": "304 Stainless Steel",
+      "maxTemp": 1400,
+      "oxidationResistance": "moderate",
+      "costPerLb": 8.50,
+      "serviceLifeYears": 3,
+      "description": "General purpose austenitic stainless steel"
+    },
+    "316_stainless": {
+      "name": "316 Stainless Steel",
+      "maxTemp": 1500,
+      "oxidationResistance": "good",
+      "costPerLb": 11.20,
+      "serviceLifeYears": 4,
+      "description": "Molybdenum-bearing austenitic stainless with improved corrosion resistance"
+    },
+    "inconel_600": {
+      "name": "Inconel 600",
+      "maxTemp": 2150,
+      "oxidationResistance": "excellent",
+      "costPerLb": 17.50,
+      "serviceLifeYears": 7.5,
+      "description": "Nickel-chromium alloy with excellent oxidation resistance at elevated temperatures"
+    },
+    "inconel_625": {
+      "name": "Inconel 625",
+      "maxTemp": 1800,
+      "oxidationResistance": "excellent",
+      "costPerLb": 22.00,
+      "serviceLifeYears": 8,
+      "description": "Nickel-chromium-molybdenum alloy with outstanding fatigue strength"
+    },
+    "309_stainless": {
+      "name": "309 Stainless Steel",
+      "maxTemp": 1850,
+      "oxidationResistance": "good",
+      "costPerLb": 12.50,
+      "serviceLifeYears": 5,
+      "description": "Heat-resistant austenitic stainless steel"
+    },
+    "hastelloy_x": {
+      "name": "Hastelloy X",
+      "maxTemp": 2200,
+      "oxidationResistance": "excellent",
+      "costPerLb": 35.00,
+      "serviceLifeYears": 10,
+      "description": "Nickel-chromium-iron-molybdenum superalloy for extreme temperatures"
+    },
+    "aluminum_6061": {
+      "name": "Aluminum 6061-T6",
+      "maxTemp": 400,
+      "oxidationResistance": "good",
+      "costPerLb": 3.50,
+      "serviceLifeYears": 15,
+      "description": "Versatile heat-treatable aluminum alloy"
+    },
+    "titanium_gr2": {
+      "name": "Titanium Grade 2",
+      "maxTemp": 600,
+      "oxidationResistance": "excellent",
+      "costPerLb": 28.00,
+      "serviceLifeYears": 20,
+      "description": "Commercially pure titanium with excellent corrosion resistance"
+    }
+  },
+  "rules": [
+    {
+      "id": "rule_exhaust_321",
+      "trigger": {
+        "applications": ["exhaust", "manifold", "header", "downpipe"],
+        "tempMin": 1400,
+        "materials": ["321_stainless", "304_stainless"]
+      },
+      "recommendation": "inconel_600",
+      "severity": "high",
+      "reasoning": "Operating at or near maximum temperature rating leaves zero safety margin. At 1500°F continuous operation, 321 SS will experience accelerated oxidation and potential creep failure.",
+      "tcoAnalysis": {
+        "currentMaterial": {
+          "initialCost": 29700,
+          "serviceLifeYears": 3,
+          "replacementsIn10Years": 4,
+          "laborPerReplacement": 8500,
+          "downtimePerReplacement": 12000,
+          "totalTCO10Year": 214670
+        },
+        "recommendedMaterial": {
+          "initialCost": 53550,
+          "serviceLifeYears": 7.5,
+          "replacementsIn10Years": 1,
+          "laborPerReplacement": 8500,
+          "downtimePerReplacement": 12000,
+          "totalTCO10Year": 136260
+        },
+        "savings10Year": 78410
+      }
+    },
+    {
+      "id": "rule_heat_exchanger_304",
+      "trigger": {
+        "applications": ["heat exchanger", "furnace", "kiln", "oven"],
+        "tempMin": 1300,
+        "materials": ["304_stainless"]
+      },
+      "recommendation": "309_stainless",
+      "severity": "medium",
+      "reasoning": "304 SS approaches its oxidation limit in sustained high-temperature heat exchanger applications. 309 SS provides better scaling resistance.",
+      "tcoAnalysis": {
+        "currentMaterial": {
+          "initialCost": 15000,
+          "serviceLifeYears": 2.5,
+          "replacementsIn10Years": 4,
+          "laborPerReplacement": 5000,
+          "downtimePerReplacement": 8000,
+          "totalTCO10Year": 82000
+        },
+        "recommendedMaterial": {
+          "initialCost": 22000,
+          "serviceLifeYears": 5,
+          "replacementsIn10Years": 2,
+          "laborPerReplacement": 5000,
+          "downtimePerReplacement": 8000,
+          "totalTCO10Year": 54000
+        },
+        "savings10Year": 28000
+      }
+    },
+    {
+      "id": "rule_corrosive_316",
+      "trigger": {
+        "applications": ["marine", "chemical", "coastal", "saltwater"],
+        "materials": ["304_stainless", "321_stainless"]
+      },
+      "recommendation": "316_stainless",
+      "severity": "medium",
+      "reasoning": "Chloride-rich environments cause pitting and stress corrosion cracking in 304/321 SS. 316 SS molybdenum content provides superior resistance.",
+      "tcoAnalysis": {
+        "currentMaterial": {
+          "initialCost": 12000,
+          "serviceLifeYears": 2,
+          "replacementsIn10Years": 5,
+          "laborPerReplacement": 3000,
+          "downtimePerReplacement": 4000,
+          "totalTCO10Year": 57000
+        },
+        "recommendedMaterial": {
+          "initialCost": 16000,
+          "serviceLifeYears": 6,
+          "replacementsIn10Years": 2,
+          "laborPerReplacement": 3000,
+          "downtimePerReplacement": 4000,
+          "totalTCO10Year": 38000
+        },
+        "savings10Year": 19000
+      }
+    }
+  ],
+  "applications": {
+    "exhaust": ["exhaust", "manifold", "header", "downpipe", "catalytic", "turbo"],
+    "heat_exchanger": ["heat exchanger", "furnace", "kiln", "oven", "boiler", "recuperator"],
+    "marine": ["marine", "coastal", "saltwater", "offshore", "ship", "boat"],
+    "chemical": ["chemical", "acid", "caustic", "corrosive", "processing"],
+    "aerospace": ["aerospace", "aircraft", "jet", "turbine", "engine"],
+    "automotive": ["automotive", "car", "truck", "vehicle", "racing"]
+  }
+}
+
+

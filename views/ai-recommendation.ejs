@@ -1,0 +1,191 @@
+<section class="grid" style="gap: 18px">
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="align-items: flex-start; justify-content: space-between">
+        <div>
+          <div class="kicker">AI Recommendation Engine<%= isDemo ? ' (Demo)' : '' %></div>
+          <% if (recommendation.hasRecommendation) { %>
+            <h2 class="h2" style="margin-top: 10px">Potential Performance Risk Detected</h2>
+            <p class="p" style="max-width: 860px">
+              Based on the search/application context, the current material choice may have insufficient safety margin.
+              <% if (isDemo) { %>This demonstrates FABIE's rule-based AI matching (Scenario #11).<% } %>
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px">
+              <span class="badge <%= recommendation.severity === 'high' ? 'danger' : 'warn' %>">Severity: <%= recommendation.severity?.toUpperCase() %></span>
+              <% if (recommendation.application) { %>
+                <span class="badge">Application: <%= recommendation.application.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %></span>
+              <% } %>
+              <% if (recommendation.currentMaterial?.operatingTemp) { %>
+                <span class="badge">Operating Temp: <%= recommendation.currentMaterial.operatingTemp %>°F</span>
+              <% } %>
+            </div>
+          <% } else { %>
+            <h2 class="h2" style="margin-top: 10px">No Recommendations</h2>
+            <p class="p"><%= recommendation.message %></p>
+          <% } %>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 260px">
+          <% if (recommendation.hasRecommendation && recommendation.recommendedSuppliers?.[0]) { %>
+            <a class="btn good" href="/messages/contact/<%= recommendation.recommendedSuppliers[0].id %>">Contact Recommended Seller</a>
+          <% } %>
+          <a class="btn" href="/marketplace<%= query ? '?q=' + encodeURIComponent(query) : '' %>">Back to Marketplace</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if (recommendation.hasRecommendation) { %>
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="pad">
+        <div class="h2">Material Comparison</div>
+        <table class="table" aria-label="Material comparison table">
+          <tr>
+            <th></th>
+            <th>Current</th>
+            <th>Recommended Upgrade</th>
+          </tr>
+          <tr>
+            <th>Material</th>
+            <td><%= recommendation.currentMaterial?.name %></td>
+            <td><strong><%= recommendation.recommendedMaterial?.name %></strong></td>
+          </tr>
+          <tr>
+            <th>Max Service Temp</th>
+            <td>
+              <%= recommendation.currentMaterial?.maxTemp %>°F
+              <% if (recommendation.currentMaterial?.safetyMargin !== undefined) { %>
+                (<%= recommendation.currentMaterial.safetyMargin %>°F margin)
+              <% } %>
+            </td>
+            <td>
+              <%= recommendation.recommendedMaterial?.maxTemp %>°F
+              <% if (recommendation.recommendedMaterial?.tempMargin) { %>
+                (+<%= recommendation.recommendedMaterial.tempMargin %>°F margin)
+              <% } %>
+            </td>
+          </tr>
+          <tr>
+            <th>Oxidation Resistance</th>
+            <td><%= recommendation.currentMaterial?.oxidationResistance?.replace(/\b\w/g, l => l.toUpperCase()) %></td>
+            <td><%= recommendation.recommendedMaterial?.oxidationResistance?.replace(/\b\w/g, l => l.toUpperCase()) %></td>
+          </tr>
+          <tr>
+            <th>Estimated Service Life</th>
+            <td>~<%= recommendation.currentMaterial?.serviceLifeYears %> years</td>
+            <td>~<%= recommendation.recommendedMaterial?.serviceLifeYears %> years</td>
+          </tr>
+          <tr>
+            <th>Cost per lb (est.)</th>
+            <td>$<%= recommendation.currentMaterial?.costPerLb?.toFixed(2) %></td>
+            <td>$<%= recommendation.recommendedMaterial?.costPerLb?.toFixed(2) %></td>
+          </tr>
+        </table>
+
+        <div class="notice" style="margin-top: 12px">
+          <strong>Why this matters:</strong> <%= recommendation.reasoning %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pad">
+        <div class="h2">Total Cost of Ownership (TCO)</div>
+        <% if (tcoFormatted) { %>
+          <div class="grid" style="gap: 12px">
+            <div class="card" style="box-shadow: none">
+              <div class="pad sm" style="display: flex; justify-content: space-between; align-items: center">
+                <div>
+                  <div class="h3">Estimated Lifetime Savings</div>
+                  <div class="p">Over 10 years (illustrative)</div>
+                </div>
+                <div class="badge verified" style="font-size: 14px"><%= tcoFormatted.savings %></div>
+              </div>
+            </div>
+
+            <div class="card" style="box-shadow: none">
+              <div class="pad sm">
+                <div class="h3">TCO Comparison (10 years)</div>
+                <table class="table" style="margin-top: 8px;">
+                  <tr>
+                    <th></th>
+                    <th>Current Material</th>
+                    <th>Recommended</th>
+                  </tr>
+                  <tr>
+                    <td>Initial Cost</td>
+                    <td><%= tcoFormatted.current.initialCost %></td>
+                    <td><%= tcoFormatted.recommended.initialCost %></td>
+                  </tr>
+                  <tr>
+                    <td>Service Life</td>
+                    <td><%= tcoFormatted.current.serviceLife %></td>
+                    <td><%= tcoFormatted.recommended.serviceLife %></td>
+                  </tr>
+                  <tr>
+                    <td>Replacements</td>
+                    <td><%= tcoFormatted.current.replacements %>×</td>
+                    <td><%= tcoFormatted.recommended.replacements %>×</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Total TCO</strong></td>
+                    <td><%= tcoFormatted.current.totalTCO %></td>
+                    <td style="color: #22c55e;"><strong><%= tcoFormatted.recommended.totalTCO %></strong></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="card" style="box-shadow: none">
+              <div class="pad sm">
+                <div class="h3">Recommended Supplier</div>
+                <% if (recommendation.recommendedSuppliers?.[0]) { %>
+                  <div class="p"><%= recommendation.recommendedSuppliers[0].seller?.name || recommendation.recommendedSuppliers[0].name %> • <%= recommendation.recommendedSuppliers[0].seller?.location %></div>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px">
+                    <% if (recommendation.recommendedSuppliers[0].availability?.status === 'in_stock') { %>
+                      <span class="badge verified">In Stock</span>
+                    <% } %>
+                    <span class="badge">Lead time: <%= recommendation.recommendedSuppliers[0].availability?.leadTimeDays || '?' %> days</span>
+                    <% if (recommendation.recommendedSuppliers[0].nafta?.qualifies) { %>
+                      <span class="badge verified">NAFTA: Qualifies</span>
+                    <% } %>
+                  </div>
+                <% } else { %>
+                  <div class="p">No suppliers currently available</div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="notice">TCO analysis not available for this recommendation.</div>
+        <% } %>
+
+        <div style="margin-top: 12px" class="row">
+          <button class="btn primary js-demo" data-action="Explain Recommendation" data-msg="AI reasoning: Temperature safety margin is critical for continuous-duty exhaust applications.">Explain</button>
+          <button class="btn js-demo" data-action="Feedback" data-msg="Feedback recorded. This helps improve future recommendations.">Give feedback</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="card">
+    <div class="pad">
+      <div class="h3">Try Another Search</div>
+      <form action="/ai/recommend" method="GET" class="row" style="margin-top: 12px;">
+        <input type="text" name="q" class="input" style="flex: 1"
+          placeholder="Try: 304 stainless heat exchanger 1300F, marine application 316 stainless"
+          value="<%= query %>" />
+        <button type="submit" class="btn primary">Analyze</button>
+      </form>
+      <div class="notice" style="margin-top: 12px">
+        <strong>Demo queries that trigger recommendations:</strong><br>
+        • "321 stainless 1500F exhaust" → Recommends Inconel 600<br>
+        • "304 stainless heat exchanger 1300F" → Recommends 309 SS<br>
+        • "304 marine application" → Recommends 316 SS
+      </div>
+    </div>
+  </div>
+</section>
+
+

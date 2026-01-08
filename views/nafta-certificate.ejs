@@ -1,0 +1,107 @@
+<section class="grid" style="gap: 18px">
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="align-items: center; justify-content: space-between">
+        <div>
+          <div class="kicker">NAFTA / CUSMA Certificate of Origin</div>
+          <h2 class="h2" style="margin-top: 10px">Certificate Preview</h2>
+        </div>
+        <div style="display: flex; gap: 10px">
+          <button class="btn js-demo" data-action="Download PDF" data-msg="In production, this generates a CBSA Form B232 PDF.">Download PDF</button>
+          <a class="btn" href="/nafta/<%= dpp.id %>">Back to NAFTA</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="pad" style="background: white; color: #1a1a1a; border-radius: 12px;">
+      <div style="text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="margin: 0; font-size: 24px;">CERTIFICATE OF ORIGIN</h1>
+        <p style="margin: 8px 0 0 0; color: #666;">CUSMA/USMCA - Canada-United States-Mexico Agreement</p>
+        <p style="margin: 4px 0 0 0; font-size: 14px;">Certificate ID: <%= certificate.certificateId %></p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <div>
+          <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #666;">EXPORTER</h3>
+          <p style="margin: 0; font-weight: bold;"><%= certificate.exporter?.name || dpp.seller?.name %></p>
+          <p style="margin: 4px 0 0 0;"><%= certificate.exporter?.location || dpp.seller?.location %></p>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #666;">DATE GENERATED</h3>
+          <p style="margin: 0;"><%= new Date(certificate.generatedAt).toLocaleDateString('en-CA') %></p>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #666;">PRODUCT DESCRIPTION</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="background: #f5f5f5;">
+            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Product Name</th>
+            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">HS Code</th>
+            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Preference Criterion</th>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #ddd;"><%= certificate.product.name %></td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><%= certificate.product.hsCode %></td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><%= certificate.originData.preferenceCriterion %></td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #666;">ORIGIN DETERMINATION</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="background: #f5f5f5;">
+            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Regional Value Content (RVC)</th>
+            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Calculation Method</th>
+            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Qualification Status</th>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold; color: #16a34a;"><%= certificate.originData.rvc %>%</td>
+            <td style="padding: 12px; border: 1px solid #ddd;"><%= certificate.originData.method %></td>
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold; color: #16a34a;">QUALIFIES</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #666;">INPUT SUMMARY</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="background: #f5f5f5;">
+            <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">Input</th>
+            <th style="text-align: left; padding: 8px; border: 1px solid #ddd;">Country</th>
+            <th style="text-align: right; padding: 8px; border: 1px solid #ddd;">Cost</th>
+          </tr>
+          <% certificate.originData.inputs.forEach(input => { %>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><%= input.name %></td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><%= input.country %></td>
+              <td style="text-align: right; padding: 8px; border: 1px solid #ddd;">$<%= input.cost.toFixed(2) %></td>
+            </tr>
+          <% }); %>
+        </table>
+      </div>
+
+      <div style="border-top: 1px solid #ddd; padding-top: 16px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #666;">CERTIFICATION STATEMENT</h3>
+        <p style="margin: 0; font-style: italic;"><%= certificate.certification.statement %></p>
+        <div style="margin-top: 24px; display: flex; justify-content: space-between;">
+          <div>
+            <p style="margin: 0; font-weight: bold; color: #dc2626;"><%= certificate.certification.status %></p>
+          </div>
+          <div style="border-top: 1px solid #1a1a1a; width: 200px; padding-top: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #666;">Authorized Signature</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>Note:</strong> This is a draft certificate for demonstration purposes. In production, this would generate a complete CBSA Form B232 with all required fields and compliance data.
+  </div>
+</section>
+
+
