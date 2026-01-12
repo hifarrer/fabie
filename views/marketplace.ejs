@@ -33,12 +33,21 @@
         </div>
 
         <div class="field" style="margin-top: 12px">
-          <label>NAFTA Status</label>
-          <select name="nafta" onchange="this.form.submit()">
-            <option value="any" <%= filters.nafta === 'any' ? 'selected' : '' %>>Any</option>
-            <option value="qualifies" <%= filters.nafta === 'qualifies' ? 'selected' : '' %>>Qualifies</option>
-            <option value="does_not_qualify" <%= filters.nafta === 'does_not_qualify' ? 'selected' : '' %>>Does Not Qualify</option>
-          </select>
+          <label>NAFTA Content (%)</label>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input 
+              type="range" 
+              name="naftaContent" 
+              id="naftaContentSlider"
+              min="0" 
+              max="100" 
+              value="<%= filters.naftaContent !== undefined ? filters.naftaContent : 0 %>"
+              oninput="document.getElementById('naftaContentValue').textContent = this.value + '%'; this.form.submit();"
+              style="flex: 1;"
+            />
+            <span id="naftaContentValue" style="min-width: 45px; text-align: right; font-size: 13px; color: var(--muted);">
+              <%= filters.naftaContent !== undefined ? filters.naftaContent : 0 %>%</span>
+          </div>
         </div>
 
         <div class="field" style="margin-top: 12px">
@@ -48,6 +57,94 @@
             <option value="document_supported" <%= filters.verification === 'document_supported' ? 'selected' : '' %>>Document-Supported+</option>
             <option value="fully_verified" <%= filters.verification === 'fully_verified' ? 'selected' : '' %>>Fully Verified+</option>
           </select>
+        </div>
+
+        <div class="field" style="margin-top: 12px">
+          <label>Intellectual Property</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255, 255, 255, 0.03);">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="ip" value="Patent" onchange="this.form.submit()" <%= filters.intellectualProperty && filters.intellectualProperty.includes('Patent') ? 'checked' : '' %> />
+              <span>Patent</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="ip" value="License" onchange="this.form.submit()" <%= filters.intellectualProperty && filters.intellectualProperty.includes('License') ? 'checked' : '' %> />
+              <span>License</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="ip" value="Trademark" onchange="this.form.submit()" <%= filters.intellectualProperty && filters.intellectualProperty.includes('Trademark') ? 'checked' : '' %> />
+              <span>Trademark</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="ip" value="Trade Secret" onchange="this.form.submit()" <%= filters.intellectualProperty && filters.intellectualProperty.includes('Trade Secret') ? 'checked' : '' %> />
+              <span>Trade Secret</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="ip" value="Copyright" onchange="this.form.submit()" <%= filters.intellectualProperty && filters.intellectualProperty.includes('Copyright') ? 'checked' : '' %> />
+              <span>Copyright</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 12px">
+          <label>Shop Compliance</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255, 255, 255, 0.03);">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="ISO 9001:2015" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('ISO 9001:2015') ? 'checked' : '' %> />
+              <span>ISO 9001:2015</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="ISO 14001" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('ISO 14001') ? 'checked' : '' %> />
+              <span>ISO 14001</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="ISO 45001" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('ISO 45001') ? 'checked' : '' %> />
+              <span>ISO 45001</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="ISO 13485" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('ISO 13485') ? 'checked' : '' %> />
+              <span>ISO 13485</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="ISO/TS 22163" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('ISO/TS 22163') ? 'checked' : '' %> />
+              <span>ISO/TS 22163</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="ISO 17024" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('ISO 17024') ? 'checked' : '' %> />
+              <span>ISO 17024</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="CWB" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('CWB') ? 'checked' : '' %> />
+              <span>CWB</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="AS9100D" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('AS9100D') ? 'checked' : '' %> />
+              <span>AS9100D</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="HACCP" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('HACCP') ? 'checked' : '' %> />
+              <span>HACCP</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="FSSC 22000" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('FSSC 22000') ? 'checked' : '' %> />
+              <span>FSSC 22000</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="21 CFR Part 11" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('21 CFR Part 11') ? 'checked' : '' %> />
+              <span>21 CFR Part 11</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="B-Corporation" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('B-Corporation') ? 'checked' : '' %> />
+              <span>B-Corporation</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="Fair Trade" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('Fair Trade') ? 'checked' : '' %> />
+              <span>Fair Trade</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" name="compliance" value="Organic" onchange="this.form.submit()" <%= filters.shopCompliance && filters.shopCompliance.includes('Organic') ? 'checked' : '' %> />
+              <span>Organic</span>
+            </label>
+          </div>
         </div>
 
         <noscript>
@@ -130,6 +227,20 @@
                 <%= dpp.description?.substring(0, 100) %>...
               <% } %>
             </div>
+            <% if (dpp.intellectualProperty && dpp.intellectualProperty.length > 0) { %>
+              <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">
+                <% dpp.intellectualProperty.forEach(ip => { %>
+                  <span class="badge" style="font-size: 11px; padding: 4px 8px;">IP: <%= ip %></span>
+                <% }); %>
+              </div>
+            <% } %>
+            <% if (dpp.shopCompliance && dpp.shopCompliance.length > 0) { %>
+              <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                <% dpp.shopCompliance.forEach(comp => { %>
+                  <span class="badge verified" style="font-size: 11px; padding: 4px 8px;"><%= comp %></span>
+                <% }); %>
+              </div>
+            <% } %>
             <div class="row" style="margin-top: 12px; align-items: center; justify-content: space-between">
               <% if (dpp.nafta?.qualifies) { %>
                 <span class="badge verified">NAFTA: <%= dpp.nafta.rvc %>%</span>

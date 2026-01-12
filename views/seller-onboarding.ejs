@@ -1,0 +1,436 @@
+<section class="grid" style="gap: 18px">
+  <div class="card" style="border: 2px solid var(--brand2);">
+    <div class="pad">
+      <div class="kicker" style="border-color: var(--brand2); color: var(--brand2);">Welcome to FABIE!</div>
+      <h2 class="h2" style="margin-top: 10px">Get Started with Your First Listing</h2>
+      <p class="p">Let's create your first product listing using our AI-powered tools. This will help you understand how FABIE works.</p>
+    </div>
+  </div>
+
+  <!-- Instructions Card -->
+  <div class="card">
+    <div class="pad">
+      <div class="h3" style="margin-bottom: 18px;">📋 How It Works</div>
+      
+      <div style="display: grid; gap: 16px;">
+        <div style="display: flex; gap: 12px; align-items: start;">
+          <div style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Add Your Sources</div>
+            <p class="p" style="font-size: 0.875rem;">Upload documents (PDFs, Excel, Word) or provide website URLs where your products are listed. You can add product catalogs, inventory sheets, purchase orders, or any document with product information.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: start;">
+          <div style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">AI Scans & Extracts</div>
+            <p class="p" style="font-size: 0.875rem;">Our AI will automatically scan your sources and extract product information including names, descriptions, specifications, part numbers, pricing, and more.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: start;">
+          <div style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Review & Edit</div>
+            <p class="p" style="font-size: 0.875rem;">Review the extracted products, select which ones you want to list, and edit any details. Click on any product name to open it in a new window for detailed editing.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: start;">
+          <div style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">4</div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Create Draft Listings</div>
+            <p class="p" style="font-size: 0.875rem;">Create draft listings that you can review and publish later. Each listing includes a Digital Product Passport (DPP) with all the product information.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips Card -->
+  <div class="card">
+    <div class="pad">
+      <div class="h3" style="margin-bottom: 18px;">💡 Tips for Best Results</div>
+      <ul style="margin: 0; padding-left: 20px; color: var(--muted);">
+        <li style="margin-bottom: 8px;">Include clear product names and descriptions in your sources</li>
+        <li style="margin-bottom: 8px;">Upload high-quality documents with complete product information</li>
+        <li style="margin-bottom: 8px;">Provide website URLs that contain detailed product pages</li>
+        <li style="margin-bottom: 8px;">Review and edit extracted information before creating listings</li>
+        <li>You can always create listings manually later if you prefer</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Main Onboarding Interface (Similar to AI-powered listing) -->
+  <div class="grid cols-2" style="gap: 18px; align-items: start;">
+    <!-- SOURCES Section -->
+    <div class="card">
+      <div class="pad">
+        <div class="h3" style="margin-bottom: 18px;">SOURCES</div>
+        
+        <!-- Website URLs -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px;">Website URLs:</label>
+          <div id="urls-container" style="margin-bottom: 8px;">
+            <!-- URLs will be added here -->
+          </div>
+          <div class="row" style="gap: 8px;">
+            <input type="text" id="url-input" class="input" placeholder="https://example.com" style="flex: 1;" />
+            <button type="button" class="btn" onclick="addUrl()">Add</button>
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px;">Documents:</label>
+          <div id="documents-container" style="margin-bottom: 8px;">
+            <!-- Documents will be listed here -->
+          </div>
+          <input type="file" id="file-input" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display: none;" onchange="handleFileSelect(event)" />
+          <button type="button" class="btn" onclick="document.getElementById('file-input').click()">Upload Documents</button>
+          <div class="p" style="margin-top: 8px; color: var(--muted); font-size: 0.875rem;">
+            Supported: PDF, Word, Excel, Images
+          </div>
+        </div>
+
+        <!-- Scan Button -->
+        <button type="button" class="btn primary" style="width: 100%;" onclick="scanSources()" id="scan-btn">
+          Scan
+        </button>
+      </div>
+    </div>
+
+    <!-- Assets Identified Section -->
+    <div class="card">
+      <div class="pad">
+        <div class="h3" style="margin-bottom: 8px;">Assets Identified</div>
+        <p class="p" style="color: var(--muted); margin-bottom: 18px; font-size: 0.875rem;">
+          (Click each Asset Name to edit in a new window)
+        </p>
+        
+        <div id="loading-indicator" style="display: none; text-align: center; padding: 24px;">
+          <div class="p">Scanning sources...</div>
+        </div>
+
+        <div id="assets-container">
+          <div class="p" style="color: var(--muted); text-align: center; padding: 24px;">
+            No assets identified yet. Add sources and click "Scan" to begin.
+          </div>
+        </div>
+
+        <div id="create-listings-section" style="display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);">
+          <button type="button" class="btn primary" onclick="createSelectedListings()" id="create-btn">
+            Create Draft Listings from Selected
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skip/Complete Section -->
+  <div class="card">
+    <div class="pad">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <div class="h3" style="margin-bottom: 4px;">Ready to Continue?</div>
+          <p class="p" style="font-size: 0.875rem;">You can create your first listing now, or skip and explore the dashboard first.</p>
+        </div>
+        <div class="row" style="gap: 12px;">
+          <button type="button" class="btn" onclick="skipOnboarding()">Skip for Now</button>
+          <button type="button" class="btn primary" onclick="completeOnboarding()" id="complete-btn" style="display: none;">
+            Complete Onboarding
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+let urls = [];
+let documents = [];
+let identifiedAssets = [];
+let listingsCreated = false;
+
+function addUrl() {
+  const input = document.getElementById('url-input');
+  const url = input.value.trim();
+  if (url && isValidUrl(url)) {
+    urls.push(url);
+    input.value = '';
+    updateUrlsDisplay();
+  } else {
+    alert('Please enter a valid URL');
+  }
+}
+
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function removeUrl(index) {
+  urls.splice(index, 1);
+  updateUrlsDisplay();
+}
+
+function updateUrlsDisplay() {
+  const container = document.getElementById('urls-container');
+  if (urls.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  container.innerHTML = urls.map((url, index) => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; background: var(--panel); border-radius: 8px; margin-bottom: 8px;">
+      <span style="font-size: 0.875rem; color: var(--text);">${url}</span>
+      <button type="button" onclick="removeUrl(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 4px 8px;">×</button>
+    </div>
+  `).join('');
+}
+
+function handleFileSelect(event) {
+  const files = Array.from(event.target.files);
+  files.forEach(file => {
+    documents.push({
+      file: file,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
+  });
+  updateDocumentsDisplay();
+}
+
+function removeDocument(index) {
+  documents.splice(index, 1);
+  updateDocumentsDisplay();
+}
+
+function updateDocumentsDisplay() {
+  const container = document.getElementById('documents-container');
+  if (documents.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  container.innerHTML = documents.map((doc, index) => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; background: var(--panel); border-radius: 8px; margin-bottom: 8px;">
+      <span style="font-size: 0.875rem; color: var(--text);">${doc.name}</span>
+      <button type="button" onclick="removeDocument(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 4px 8px;">×</button>
+    </div>
+  `).join('');
+}
+
+async function scanSources() {
+  if (urls.length === 0 && documents.length === 0) {
+    alert('Please add at least one URL or document');
+    return;
+  }
+
+  const scanBtn = document.getElementById('scan-btn');
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const assetsContainer = document.getElementById('assets-container');
+  
+  scanBtn.disabled = true;
+  loadingIndicator.style.display = 'block';
+  assetsContainer.innerHTML = '';
+
+  try {
+    const formData = new FormData();
+    
+    // Add URLs
+    urls.forEach(url => {
+      formData.append('urls', url);
+    });
+    
+    // Add documents
+    documents.forEach(doc => {
+      formData.append('documents', doc.file);
+    });
+
+    const response = await fetch('/seller/ai-powered/scan', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Scan failed');
+    }
+
+    const data = await response.json();
+    identifiedAssets = data.assets || [];
+    
+    displayAssets(identifiedAssets);
+    
+  } catch (error) {
+    console.error('Error scanning sources:', error);
+    alert('Failed to scan sources. Please try again.');
+  } finally {
+    scanBtn.disabled = false;
+    loadingIndicator.style.display = 'none';
+  }
+}
+
+function displayAssets(assets) {
+  const container = document.getElementById('assets-container');
+  const createSection = document.getElementById('create-listings-section');
+  
+  if (assets.length === 0) {
+    container.innerHTML = '<div class="p" style="color: var(--muted); text-align: center; padding: 24px;">No assets found in the provided sources.</div>';
+    createSection.style.display = 'none';
+    return;
+  }
+
+  // Create table
+  let tableHTML = `
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted); width: 40px;">
+              <input type="checkbox" id="select-all" onchange="toggleAllAssets(this.checked)" />
+            </th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Asset Name</th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Type</th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Part #</th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Description</th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Price</th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Specs</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  assets.forEach((asset, index) => {
+    const assetTypeMap = {
+      'product': 'Product',
+      'equipment': 'Equipment',
+      'material': 'Material',
+      'service': 'Service'
+    };
+    
+    const priceDisplay = asset.price ? 
+      (asset.currency ? `${asset.currency} ${asset.price}` : `$${asset.price}`) : 
+      'N/A';
+    const specsDisplay = [
+      asset.material ? `Material: ${asset.material}` : null,
+      asset.dimensions ? `Dimensions: ${asset.dimensions}` : null,
+      asset.manufacturer ? `Mfr: ${asset.manufacturer}` : null
+    ].filter(Boolean).join('; ') || asset.specifications || 'N/A';
+    
+    tableHTML += `
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;">
+          <input type="checkbox" class="asset-checkbox" data-index="${index}" />
+        </td>
+        <td style="padding: 12px;">
+          <a href="/dpp/new/${asset.assetType || 'raw_material'}?aiData=${encodeURIComponent(JSON.stringify(asset))}" 
+             target="_blank" 
+             style="color: var(--brand); text-decoration: underline; cursor: pointer;">
+            ${asset.name || 'Unnamed Asset'}
+          </a>
+        </td>
+        <td style="padding: 12px; font-size: 0.875rem;">${assetTypeMap[asset.type] || asset.type || 'N/A'}</td>
+        <td style="padding: 12px; font-size: 0.875rem; color: var(--muted);">${asset.partNumber || asset.part_number || asset.sku || 'N/A'}</td>
+        <td style="padding: 12px; font-size: 0.875rem; color: var(--muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis;" title="${(asset.description || '').replace(/"/g, '&quot;')}">${asset.description || 'N/A'}</td>
+        <td style="padding: 12px; font-size: 0.875rem; color: var(--muted);">${priceDisplay}</td>
+        <td style="padding: 12px; font-size: 0.875rem; color: var(--muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis;" title="${specsDisplay.replace(/"/g, '&quot;')}">${specsDisplay}</td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  container.innerHTML = tableHTML;
+  createSection.style.display = 'block';
+}
+
+function toggleAllAssets(checked) {
+  document.querySelectorAll('.asset-checkbox').forEach(cb => {
+    cb.checked = checked;
+  });
+}
+
+async function createSelectedListings() {
+  const checkboxes = document.querySelectorAll('.asset-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('Please select at least one asset to create a listing');
+    return;
+  }
+
+  const selectedAssets = Array.from(checkboxes).map(cb => {
+    const index = parseInt(cb.dataset.index);
+    return identifiedAssets[index];
+  });
+
+  try {
+    const response = await fetch('/seller/ai-powered/create-listings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ assets: selectedAssets })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create listings');
+    }
+
+    const data = await response.json();
+    listingsCreated = true;
+    
+    // Show complete button
+    document.getElementById('complete-btn').style.display = 'block';
+    
+    alert(`Successfully created ${data.created} draft listing(s)! You can now complete onboarding or create more listings.`);
+    
+  } catch (error) {
+    console.error('Error creating listings:', error);
+    alert('Failed to create listings. Please try again.');
+  }
+}
+
+async function completeOnboarding() {
+  try {
+    const response = await fetch('/seller/onboarding/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete onboarding');
+    }
+
+    // Redirect to dashboard
+    window.location.href = '/seller/dashboard';
+    
+  } catch (error) {
+    console.error('Error completing onboarding:', error);
+    alert('Failed to complete onboarding. Please try again.');
+  }
+}
+
+async function skipOnboarding() {
+  // Mark onboarding as complete even if they skip
+  await completeOnboarding();
+}
+
+// Allow Enter key to add URL
+document.getElementById('url-input')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    addUrl();
+  }
+});
+</script>

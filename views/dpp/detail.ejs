@@ -4,7 +4,14 @@
       <div class="row" style="align-items: flex-start; justify-content: space-between">
         <div>
           <div class="kicker">Digital Product Passport (DPP) • <%= dpp.assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %></div>
-          <h2 class="h2" style="margin-top: 10px"><%= dpp.name %></h2>
+          <div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-top: 10px">
+            <h2 class="h2" style="margin: 0"><%= dpp.name %></h2>
+            <% if (dpp.specs?.hsCode) { %>
+              <div style="font-size: 16px; color: #f59e0b; font-weight: 600; white-space: nowrap">
+                HTS (HS) Code: <%= dpp.specs.hsCode %>
+              </div>
+            <% } %>
+          </div>
           <p class="p"><%= dpp.seller?.name %> • <%= dpp.seller?.location %></p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px">
             <% if (dpp.verification?.tier === 'fully_verified') { %>
@@ -140,6 +147,115 @@
     </div>
   </div>
 
+  <% 
+    const ediApplicable = ['raw_material', 'finished_part', 'equipment'].includes(dpp.assetType);
+  %>
+  <% if (ediApplicable) { %>
+    <% if (ediTransactions && ediTransactions.length > 0) { %>
+    <div class="card">
+      <div class="pad">
+        <div class="h2">EDI Transactions</div>
+        <div class="grid" style="gap: 12px; margin-top: 16px">
+          <% if (ediWorkflow?.purchaseOrder) { %>
+            <div class="card" style="box-shadow: none; border: 1px solid #e5e7eb">
+              <div class="pad sm">
+                <div class="row" style="justify-content: space-between; align-items: center">
+                  <div>
+                    <div class="h3">850 - Purchase Order</div>
+                    <p class="p">Status: <span class="badge"><%= ediWorkflow.purchaseOrder.status %></span></p>
+                    <p class="p" style="font-size: 14px; color: #6b7280">
+                      <%= new Date(ediWorkflow.purchaseOrder.createdAt).toLocaleDateString() %>
+                    </p>
+                  </div>
+                  <a class="btn" href="/api/edi/<%= ediWorkflow.purchaseOrder.id %>" target="_blank">View</a>
+                </div>
+              </div>
+            </div>
+          <% } %>
+          <% if (ediWorkflow?.acknowledgment) { %>
+            <div class="card" style="box-shadow: none; border: 1px solid #e5e7eb">
+              <div class="pad sm">
+                <div class="row" style="justify-content: space-between; align-items: center">
+                  <div>
+                    <div class="h3">855 - PO Acknowledgment</div>
+                    <p class="p">Status: <span class="badge verified"><%= ediWorkflow.acknowledgment.status %></span></p>
+                    <p class="p" style="font-size: 14px; color: #6b7280">
+                      <%= new Date(ediWorkflow.acknowledgment.createdAt).toLocaleDateString() %>
+                    </p>
+                  </div>
+                  <a class="btn" href="/api/edi/<%= ediWorkflow.acknowledgment.id %>" target="_blank">View</a>
+                </div>
+              </div>
+            </div>
+          <% } %>
+          <% if (ediWorkflow?.shipNotice) { %>
+            <div class="card" style="box-shadow: none; border: 1px solid #e5e7eb">
+              <div class="pad sm">
+                <div class="row" style="justify-content: space-between; align-items: center">
+                  <div>
+                    <div class="h3">856 - Ship Notice</div>
+                    <p class="p">Status: <span class="badge verified"><%= ediWorkflow.shipNotice.status %></span></p>
+                    <% if (ediWorkflow.shipNotice.trackingNumber) { %>
+                      <p class="p" style="font-size: 14px">Tracking: <%= ediWorkflow.shipNotice.trackingNumber %></p>
+                    <% } %>
+                  </div>
+                  <a class="btn" href="/api/edi/<%= ediWorkflow.shipNotice.id %>" target="_blank">View</a>
+                </div>
+              </div>
+            </div>
+          <% } %>
+          <% if (ediWorkflow?.invoice) { %>
+            <div class="card" style="box-shadow: none; border: 1px solid #e5e7eb">
+              <div class="pad sm">
+                <div class="row" style="justify-content: space-between; align-items: center">
+                  <div>
+                    <div class="h3">810 - Invoice</div>
+                    <p class="p">Invoice #: <%= ediWorkflow.invoice.invoiceNumber %></p>
+                    <p class="p">Total: <%= ediWorkflow.invoice.currency || 'CAD' %> $<%= ediWorkflow.invoice.total?.toLocaleString() || '0' %></p>
+                  </div>
+                  <a class="btn" href="/api/edi/<%= ediWorkflow.invoice.id %>" target="_blank">View</a>
+                </div>
+              </div>
+            </div>
+          <% } %>
+          <% if (ediWorkflow?.payment) { %>
+            <div class="card" style="box-shadow: none; border: 1px solid #e5e7eb">
+              <div class="pad sm">
+                <div class="row" style="justify-content: space-between; align-items: center">
+                  <div>
+                    <div class="h3">820 - Payment Order</div>
+                    <p class="p">Amount: <%= ediWorkflow.payment.currency || 'CAD' %> $<%= ediWorkflow.payment.paymentAmount?.toLocaleString() || '0' %></p>
+                    <p class="p" style="font-size: 14px; color: #6b7280">
+                      <%= new Date(ediWorkflow.payment.paymentDate).toLocaleDateString() %>
+                    </p>
+                  </div>
+                  <a class="btn" href="/api/edi/<%= ediWorkflow.payment.id %>" target="_blank">View</a>
+                </div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+        <div style="margin-top: 16px">
+          <button class="btn" onclick="showEDIModal()">Create EDI Transaction</button>
+          <a class="btn" href="/api/edi/dpp/<%= dpp.id %>" target="_blank" style="margin-left: 10px">View All EDI</a>
+        </div>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="card">
+      <div class="pad">
+        <div class="h2">EDI Transactions</div>
+        <div class="notice" style="margin-top: 12px">
+          No EDI transactions yet. EDI is available for parts, equipment, and materials.
+        </div>
+        <div style="margin-top: 16px">
+          <button class="btn" onclick="showEDIModal()">Create EDI Transaction</button>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  <% } %>
+
   <div class="card">
     <div class="pad">
       <div class="row" style="justify-content: space-between; align-items: center">
@@ -158,5 +274,94 @@
     </div>
   </div>
 </section>
+
+<!-- EDI Modal -->
+<div id="ediModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center">
+  <div class="card" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto">
+    <div class="pad">
+      <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 20px">
+        <div class="h2">Create EDI Transaction</div>
+        <button class="btn" onclick="hideEDIModal()">Close</button>
+      </div>
+      <form id="ediForm" onsubmit="createEDITransaction(event)">
+        <div class="field">
+          <label>Transaction Type</label>
+          <select name="transactionType" class="input" required>
+            <option value="850">850 - Purchase Order</option>
+            <option value="855">855 - Purchase Order Acknowledgment</option>
+            <option value="856">856 - Ship Notice/Manifest</option>
+            <option value="810">810 - Invoice</option>
+            <option value="820">820 - Payment Order</option>
+            <option value="997">997 - Functional Acknowledgment</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" name="useAI" checked> Use AI to draft transaction
+          </label>
+        </div>
+        <div class="field">
+          <label>Notes (optional)</label>
+          <textarea name="notes" class="input" rows="3" placeholder="Additional context for AI generation..."></textarea>
+        </div>
+        <button type="submit" class="btn primary" style="width: 100%; margin-top: 16px">Create Transaction</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function showEDIModal() {
+  document.getElementById('ediModal').style.display = 'flex';
+}
+
+function hideEDIModal() {
+  document.getElementById('ediModal').style.display = 'none';
+}
+
+async function createEDITransaction(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  const transactionType = formData.get('transactionType');
+  const useAI = formData.get('useAI') === 'on';
+  const notes = formData.get('notes');
+
+  try {
+    let response;
+    if (useAI) {
+      response = await fetch(`/api/edi/<%= dpp.id %>/draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionType,
+          context: { notes }
+        })
+      });
+    } else {
+      response = await fetch('/api/edi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dppId: '<%= dpp.id %>',
+          transactionType,
+          status: 'draft'
+        })
+      });
+    }
+
+    if (response.ok) {
+      alert('EDI transaction created successfully!');
+      location.reload();
+    } else {
+      const error = await response.json();
+      alert('Error: ' + (error.error || 'Failed to create transaction'));
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error creating EDI transaction');
+  }
+}
+</script>
 
 

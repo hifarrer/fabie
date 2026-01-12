@@ -52,10 +52,21 @@ router.get('/:id', async (req, res) => {
       naftaInputs = await naftaService.getInputsByDppId(dpp.id);
     }
 
+    // Get EDI transactions if applicable
+    let ediTransactions = [];
+    let ediWorkflow = null;
+    const ediService = (await import('../services/edi.js')).default;
+    if (ediService.isApplicable(dpp.assetType)) {
+      ediTransactions = await ediService.getByDppId(dpp.id);
+      ediWorkflow = await ediService.getWorkflow(dpp.id);
+    }
+
     res.render('dpp/detail', {
       title: `${dpp.name} • FABIE`,
       dpp,
       naftaInputs,
+      ediTransactions,
+      ediWorkflow,
       user: req.session?.user || null
     });
   } catch (error) {
@@ -77,10 +88,40 @@ router.get('/new/:assetType', async (req, res) => {
     return res.redirect('/dpp/new/raw_material');
   }
 
+  // Check for AI-extracted data
+  let aiData = null;
+  if (req.query.aiData) {
+    try {
+      aiData = JSON.parse(decodeURIComponent(req.query.aiData));
+    } catch (e) {
+      console.error('Error parsing AI data:', e);
+    }
+  }
+
+  // If AI data exists, create a partial DPP object for pre-filling
+  let prefillDpp = null;
+  if (aiData) {
+    prefillDpp = {
+      name: aiData.name || '',
+      description: aiData.description || '',
+      specs: {
+        material: aiData.material || aiData.attribute3 || '',
+        dimensions: aiData.dimensions || aiData.attribute4 || '',
+        form: aiData.form || ''
+      },
+      pricing: {
+        basePrice: aiData.price ? parseFloat(aiData.price) : 0
+      },
+      availability: {
+        quantity: aiData.quantity ? parseInt(aiData.quantity) : 0
+      }
+    };
+  }
+
   res.render('dpp/form', {
     title: 'Create New Listing • FABIE',
-    dpp: null,
-    assetType,
+    dpp: prefillDpp,
+    assetType: aiData?.assetType || assetType,
     isEdit: false,
     user: req.session?.user || null
   });

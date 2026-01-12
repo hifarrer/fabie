@@ -17,11 +17,14 @@ class DPPService {
       );
     }
 
-    if (filters.nafta) {
-      if (filters.nafta === 'qualifies') {
-        dpps = dpps.filter(d => d.nafta?.qualifies === true);
-      } else if (filters.nafta === 'does_not_qualify') {
-        dpps = dpps.filter(d => d.nafta?.qualifies === false);
+    if (filters.naftaContent !== undefined && filters.naftaContent !== null) {
+      const minContent = parseInt(filters.naftaContent, 10);
+      // Only apply filter if minContent > 0 (0 means show all)
+      if (minContent > 0) {
+        dpps = dpps.filter(d => {
+          const rvc = d.nafta?.rvc;
+          return rvc !== null && rvc !== undefined && rvc >= minContent;
+        });
       }
     }
 
@@ -31,6 +34,24 @@ class DPPService {
       dpps = dpps.filter(d => {
         const dppTierIndex = tierOrder.indexOf(d.verification?.tier || 'basic');
         return dppTierIndex >= minTierIndex;
+      });
+    }
+
+    if (filters.intellectualProperty && filters.intellectualProperty.length > 0) {
+      dpps = dpps.filter(d => {
+        const ip = d.intellectualProperty || [];
+        return filters.intellectualProperty.some(filterIp => 
+          ip.some(dppIp => dppIp.toLowerCase() === filterIp.toLowerCase())
+        );
+      });
+    }
+
+    if (filters.shopCompliance && filters.shopCompliance.length > 0) {
+      dpps = dpps.filter(d => {
+        const compliance = d.shopCompliance || [];
+        return filters.shopCompliance.some(filterComp => 
+          compliance.some(dppComp => dppComp.toLowerCase() === filterComp.toLowerCase())
+        );
       });
     }
 
@@ -86,6 +107,8 @@ class DPPService {
         rvc: null,
         qualifies: null
       },
+      intellectualProperty: dppData.intellectualProperty || [],
+      shopCompliance: dppData.shopCompliance || [],
       documents: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

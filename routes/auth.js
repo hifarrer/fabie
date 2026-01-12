@@ -32,7 +32,12 @@ router.post('/login', async (req, res) => {
     
     // Redirect based on role
     if (user.role === 'seller') {
-      res.redirect('/seller/dashboard');
+      // Check if seller needs onboarding
+      if (!user.onboardingCompleted) {
+        res.redirect('/seller/onboarding');
+      } else {
+        res.redirect('/seller/dashboard');
+      }
     } else {
       res.redirect('/marketplace');
     }
@@ -91,7 +96,8 @@ router.post('/register', async (req, res) => {
 
     // Redirect based on role
     if (role === 'seller') {
-      res.redirect('/seller/dashboard');
+      // Redirect new sellers to onboarding
+      res.redirect('/seller/onboarding');
     } else {
       res.redirect('/marketplace');
     }

@@ -26,6 +26,7 @@ class AuthService {
       location: userData.location || '',
       phone: userData.phone || '',
       role: userData.role, // 'buyer' or 'seller'
+      onboardingCompleted: false, // Track onboarding status
       createdAt: new Date().toISOString()
     };
 

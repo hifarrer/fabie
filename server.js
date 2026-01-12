@@ -13,6 +13,7 @@ import aiRoutes from './routes/ai.js';
 import messagesRoutes from './routes/messages.js';
 import sellerRoutes from './routes/seller.js';
 import authRoutes from './routes/auth.js';
+import ediRoutes from './routes/edi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,6 +61,7 @@ app.use('/nafta', naftaRoutes);
 app.use('/ai', aiRoutes);
 app.use('/messages', messagesRoutes);
 app.use('/seller', sellerRoutes);
+app.use('/api/edi', ediRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -26,14 +26,20 @@ router.get('/', async (req, res) => {
 // Marketplace browse
 router.get('/marketplace', async (req, res) => {
   try {
-    const { q, type, location, nafta, verification } = req.query;
+    const { q, type, location, naftaContent, verification, ip, compliance } = req.query;
+    
+    // Handle array query parameters (can be single value or array)
+    const intellectualProperty = ip ? (Array.isArray(ip) ? ip : [ip]) : [];
+    const shopCompliance = compliance ? (Array.isArray(compliance) ? compliance : [compliance]) : [];
     
     const filters = {
       search: q,
       assetType: type,
       location,
-      nafta,
-      verification
+      naftaContent: naftaContent ? parseInt(naftaContent, 10) : undefined,
+      verification,
+      intellectualProperty,
+      shopCompliance
     };
 
     const dpps = await dppService.getAll(filters);
@@ -45,8 +51,10 @@ router.get('/marketplace', async (req, res) => {
       filters: {
         type: type || 'all',
         location: location || 'all',
-        nafta: nafta || 'any',
-        verification: verification || 'any'
+        naftaContent: naftaContent ? parseInt(naftaContent, 10) : 0,
+        verification: verification || 'any',
+        intellectualProperty: intellectualProperty,
+        shopCompliance: shopCompliance
       },
       user: req.session?.user || null
     });

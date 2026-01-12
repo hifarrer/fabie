@@ -108,6 +108,14 @@
         "rvc": 70,
         "qualifies": true
       },
+      "intellectualProperty": [
+        "Patent",
+        "License"
+      ],
+      "shopCompliance": [
+        "ISO 9001:2015",
+        "CWB"
+      ],
       "documents": [
         {
           "id": "doc-1",
@@ -122,7 +130,7 @@
           "status": "pending"
         }
       ],
-      "views": 1285,
+      "views": 1287,
       "inquiries": 14,
       "status": "active",
       "createdAt": "2025-12-01T10:00:00Z"
@@ -167,6 +175,15 @@
         "rvc": 85,
         "qualifies": true
       },
+      "intellectualProperty": [
+        "Trademark"
+      ],
+      "shopCompliance": [
+        "ISO 9001:2015",
+        "ISO 14001",
+        "ISO 45001",
+        "AS9100D"
+      ],
       "documents": [
         {
           "id": "doc-3",
@@ -225,6 +242,13 @@
         "rvc": 100,
         "qualifies": true
       },
+      "intellectualProperty": [
+        "License"
+      ],
+      "shopCompliance": [
+        "ISO 9001:2015",
+        "CWB"
+      ],
       "documents": [],
       "views": 567,
       "inquiries": 8,
@@ -373,6 +397,15 @@
         "rvc": 100,
         "qualifies": true
       },
+      "intellectualProperty": [
+        "Patent",
+        "Trademark"
+      ],
+      "shopCompliance": [
+        "ISO 9001:2015",
+        "ISO 13485",
+        "HACCP"
+      ],
       "documents": [],
       "views": 445,
       "inquiries": 9,
@@ -420,7 +453,7 @@
         "qualifies": true
       },
       "documents": [],
-      "views": 315,
+      "views": 316,
       "inquiries": 6,
       "status": "active",
       "createdAt": "2025-12-03T10:00:00Z"
@@ -518,7 +551,7 @@
           "uploadedAt": "2026-01-08T20:44:09.704Z"
         }
       ],
-      "views": 194,
+      "views": 195,
       "inquiries": 2,
       "status": "active",
       "createdAt": "2025-12-08T10:00:00Z"
@@ -563,6 +596,13 @@
         "rvc": null,
         "qualifies": null
       },
+      "intellectualProperty": [
+        "License"
+      ],
+      "shopCompliance": [
+        "ISO 9001:2015",
+        "ISO 45001"
+      ],
       "documents": [],
       "views": 756,
       "inquiries": 4,
@@ -770,6 +810,14 @@
         "rvc": null,
         "qualifies": null
       },
+      "intellectualProperty": [
+        "Trade Secret"
+      ],
+      "shopCompliance": [
+        "AS9100D",
+        "ISO 9001:2015",
+        "ISO 14001"
+      ],
       "documents": [],
       "views": 678,
       "inquiries": 15,
@@ -814,11 +862,114 @@
         "rvc": null,
         "qualifies": null
       },
+      "intellectualProperty": [
+        "Patent",
+        "License"
+      ],
+      "shopCompliance": [
+        "ISO 9001:2015",
+        "ISO 14001",
+        "FSSC 22000"
+      ],
       "documents": [],
       "views": 445,
       "inquiries": 12,
       "status": "active",
       "createdAt": "2025-11-12T10:00:00Z"
+    },
+    {
+      "id": "ca151c2a-83e4-461d-84ce-dc0c4a9ac70c",
+      "assetType": "finished_part",
+      "name": " --- Content from https://autoparts.toyota.com/products/product/wheel-assy-steering-4510002z10c0 ---",
+      "description": "\n\n--- Content from https://autoparts.toyota.com/products/product/wheel-assy-steering-4510002z10c0 ---\n\nSteering Wheel Assembly #45100-02Z10-C0 | Autoparts.toyota.com",
+      "sellerId": "demo-seller-1",
+      "seller": {
+        "name": "Demo Seller",
+        "location": "Ontario, Canada"
+      },
+      "specs": {
+        "material": "N/A",
+        "dimensions": "N/A",
+        "form": ""
+      },
+      "pricing": {
+        "basePrice": 0,
+        "currency": "CAD",
+        "unit": "unit"
+      },
+      "availability": {
+        "status": "draft",
+        "quantity": 0,
+        "leadTimeDays": 7,
+        "minimumOrder": 1
+      },
+      "status": "draft",
+      "views": 1,
+      "inquiries": 0,
+      "verification": {
+        "tier": "basic",
+        "badges": []
+      },
+      "nafta": {
+        "enabled": false,
+        "rvc": null,
+        "qualifies": null
+      },
+      "intellectualProperty": [],
+      "shopCompliance": [],
+      "documents": [],
+      "createdAt": "2026-01-12T17:43:14.162Z",
+      "updatedAt": "2026-01-12T17:43:14.162Z"
+    },
+    {
+      "id": "e1b31662-3e2d-4c4c-ab89-ab358326b0a8",
+      "assetType": "finished_part",
+      "name": "Steering Wheel Assembly",
+      "description": "Ensure precise control and safe directional movement in your Toyota with our genuine Steering Wheel Assembly. Enhance performance and longevity.",
+      "sellerId": "demo-seller-1",
+      "seller": {
+        "name": "Demo Seller",
+        "location": "Ontario, Canada"
+      },
+      "specs": {
+        "material": "",
+        "dimensions": "",
+        "form": "",
+        "weight": "",
+        "partNumber": "4510002Z10C0",
+        "manufacturer": "Toyota Genuine",
+        "specifications": "Ensure precise control and safe directional movement in your Toyota with our genuine Steering Wheel Assembly. Enhance performance and longevity.",
+        "compatibility": "",
+        "condition": "new"
+      },
+      "pricing": {
+        "basePrice": 918.65,
+        "currency": "USD",
+        "unit": "unit"
+      },
+      "availability": {
+        "status": "InStock",
+        "quantity": 0,
+        "leadTimeDays": 7,
+        "minimumOrder": 1
+      },
+      "status": "draft",
+      "views": 1,
+      "inquiries": 0,
+      "verification": {
+        "tier": "basic",
+        "badges": []
+      },
+      "nafta": {
+        "enabled": false,
+        "rvc": null,
+        "qualifies": null
+      },
+      "intellectualProperty": [],
+      "shopCompliance": [],
+      "documents": [],
+      "createdAt": "2026-01-12T17:46:36.272Z",
+      "updatedAt": "2026-01-12T17:46:36.272Z"
     }
   ],
   "naftaInputs": [
@@ -923,5 +1074,6 @@
       "createdAt": "2025-12-18T11:00:00Z",
       "readAt": null
     }
-  ]
+  ],
+  "ediTransactions": []
 }
