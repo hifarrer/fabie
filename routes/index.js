@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import dppService from '../services/dpp.js';
+import { passwordAuth } from '../middleware/passwordAuth.js';
 
 const router = Router();
 
-// Landing page
-router.get('/', async (req, res) => {
+// Landing page - password protected
+router.get('/', passwordAuth, async (req, res) => {
   try {
     const featuredListings = await dppService.getFeatured(3);
     

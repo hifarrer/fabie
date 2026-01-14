@@ -5,6 +5,9 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Import middleware
+import { passwordAuth } from './middleware/passwordAuth.js';
+
 // Import routes
 import indexRoutes from './routes/index.js';
 import dppRoutes from './routes/dpp.js';
@@ -51,6 +54,24 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.user = req.session?.user || null;
   next();
+});
+
+// Dev-login route handler
+app.post('/dev-login', express.urlencoded({ extended: true }), (req, res) => {
+  const { password } = req.body;
+  
+  if (password === 'Fabie2025') {
+    req.session.devAuthenticated = true;
+    const redirectUrl = req.query.redirect || '/';
+    return res.redirect(redirectUrl);
+  } else {
+    return res.render('dev-login', {
+      title: 'Development Access',
+      error: 'Incorrect password. Please try again.',
+      layout: false,
+      redirect: req.query.redirect
+    });
+  }
 });
 
 // Routes
