@@ -46,6 +46,24 @@
     </div>
   </div>
 
+  <% if (dpp.images && dpp.images.length > 0) { %>
+  <div class="card">
+    <div class="pad">
+      <div class="h2">Product Images</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+        <% dpp.images.forEach((imageUrl, index) => { %>
+          <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: var(--bg);">
+            <img src="<%= imageUrl %>" 
+                 alt="Product image <%= index + 1 %>" 
+                 style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;"
+                 onclick="openImageModal('<%= imageUrl %>', <%= dpp.images.length %>, <%= index %>)" />
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
   <div class="grid cols-2">
     <div class="card">
       <div class="pad">
@@ -367,6 +385,96 @@ async function createEDITransaction(event) {
   } catch (error) {
     console.error('Error:', error);
     alert('Error creating EDI transaction');
+  }
+}
+
+// Image modal functionality
+function openImageModal(imageUrl, totalImages, currentIndex) {
+  const images = <%= JSON.stringify(dpp.images || []) %>;
+  
+  // Create modal
+  const modal = document.createElement('div');
+  modal.id = 'imageModal';
+  modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+  modal.onclick = closeImageModal;
+  
+  const imageContainer = document.createElement('div');
+  imageContainer.style.cssText = 'position: relative; max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center;';
+  imageContainer.onclick = (e) => e.stopPropagation();
+  
+  const img = document.createElement('img');
+  img.src = images[currentIndex];
+  img.style.cssText = 'max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 8px;';
+  img.alt = 'Product image';
+  
+  // Navigation buttons
+  if (images.length > 1) {
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '‹';
+    prevBtn.style.cssText = 'position: absolute; left: -60px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 48px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;';
+    prevBtn.onclick = (e) => {
+      e.stopPropagation();
+      const newIndex = (currentIndex - 1 + images.length) % images.length;
+      closeImageModal();
+      openImageModal(images[newIndex], images.length, newIndex);
+    };
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '›';
+    nextBtn.style.cssText = 'position: absolute; right: -60px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 48px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;';
+    nextBtn.onclick = (e) => {
+      e.stopPropagation();
+      const newIndex = (currentIndex + 1) % images.length;
+      closeImageModal();
+      openImageModal(images[newIndex], images.length, newIndex);
+    };
+    
+    imageContainer.appendChild(prevBtn);
+    imageContainer.appendChild(nextBtn);
+    
+    // Image counter
+    const counter = document.createElement('div');
+    counter.textContent = `${currentIndex + 1} / ${images.length}`;
+    counter.style.cssText = 'position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px;';
+    imageContainer.appendChild(counter);
+  }
+  
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '×';
+  closeBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 36px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;';
+  closeBtn.onclick = closeImageModal;
+  modal.appendChild(closeBtn);
+  
+  imageContainer.appendChild(img);
+  modal.appendChild(imageContainer);
+  document.body.appendChild(modal);
+  
+  // Keyboard navigation
+  const handleKeyPress = (e) => {
+    if (e.key === 'Escape') {
+      closeImageModal();
+    } else if (e.key === 'ArrowLeft' && images.length > 1) {
+      const newIndex = (currentIndex - 1 + images.length) % images.length;
+      closeImageModal();
+      openImageModal(images[newIndex], images.length, newIndex);
+    } else if (e.key === 'ArrowRight' && images.length > 1) {
+      const newIndex = (currentIndex + 1) % images.length;
+      closeImageModal();
+      openImageModal(images[newIndex], images.length, newIndex);
+    }
+  };
+  document.addEventListener('keydown', handleKeyPress);
+  modal._keyHandler = handleKeyPress;
+}
+
+function closeImageModal() {
+  const modal = document.getElementById('imageModal');
+  if (modal) {
+    if (modal._keyHandler) {
+      document.removeEventListener('keydown', modal._keyHandler);
+    }
+    modal.remove();
   }
 }
 </script>

@@ -75,6 +75,11 @@ class DPPService {
     await db.read();
     const dpp = db.data.dpps.find(d => d.id === id);
     
+    // Ensure images field exists (for older DPPs that might not have it)
+    if (dpp && !dpp.images) {
+      dpp.images = [];
+    }
+    
     // Increment views
     if (dpp) {
       dpp.views = (dpp.views || 0) + 1;
@@ -98,6 +103,7 @@ class DPPService {
       views: 0,
       inquiries: 0,
       status: dppData.status || 'active',
+      images: dppData.images || [], // Support multiple images
       verification: {
         tier: 'basic',
         badges: []
@@ -128,11 +134,23 @@ class DPPService {
       throw new Error('DPP not found');
     }
 
+    // Ensure images is always an array
+    if (updates.images !== undefined) {
+      if (!Array.isArray(updates.images)) {
+        updates.images = [];
+      }
+    }
+
     db.data.dpps[index] = {
       ...db.data.dpps[index],
       ...updates,
       updatedAt: new Date().toISOString()
     };
+
+    // Ensure images field exists even if not in updates
+    if (!db.data.dpps[index].images) {
+      db.data.dpps[index].images = [];
+    }
 
     await db.write();
     return db.data.dpps[index];

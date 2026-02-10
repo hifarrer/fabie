@@ -551,7 +551,7 @@
           "uploadedAt": "2026-01-08T20:44:09.704Z"
         }
       ],
-      "views": 195,
+      "views": 197,
       "inquiries": 2,
       "status": "active",
       "createdAt": "2025-12-08T10:00:00Z"
@@ -878,50 +878,6 @@
       "createdAt": "2025-11-12T10:00:00Z"
     },
     {
-      "id": "ca151c2a-83e4-461d-84ce-dc0c4a9ac70c",
-      "assetType": "finished_part",
-      "name": " --- Content from https://autoparts.toyota.com/products/product/wheel-assy-steering-4510002z10c0 ---",
-      "description": "\n\n--- Content from https://autoparts.toyota.com/products/product/wheel-assy-steering-4510002z10c0 ---\n\nSteering Wheel Assembly #45100-02Z10-C0 | Autoparts.toyota.com",
-      "sellerId": "demo-seller-1",
-      "seller": {
-        "name": "Demo Seller",
-        "location": "Ontario, Canada"
-      },
-      "specs": {
-        "material": "N/A",
-        "dimensions": "N/A",
-        "form": ""
-      },
-      "pricing": {
-        "basePrice": 0,
-        "currency": "CAD",
-        "unit": "unit"
-      },
-      "availability": {
-        "status": "draft",
-        "quantity": 0,
-        "leadTimeDays": 7,
-        "minimumOrder": 1
-      },
-      "status": "draft",
-      "views": 1,
-      "inquiries": 0,
-      "verification": {
-        "tier": "basic",
-        "badges": []
-      },
-      "nafta": {
-        "enabled": false,
-        "rvc": null,
-        "qualifies": null
-      },
-      "intellectualProperty": [],
-      "shopCompliance": [],
-      "documents": [],
-      "createdAt": "2026-01-12T17:43:14.162Z",
-      "updatedAt": "2026-01-12T17:43:14.162Z"
-    },
-    {
       "id": "e1b31662-3e2d-4c4c-ab89-ab358326b0a8",
       "assetType": "finished_part",
       "name": "Steering Wheel Assembly",
@@ -970,6 +926,246 @@
       "documents": [],
       "createdAt": "2026-01-12T17:46:36.272Z",
       "updatedAt": "2026-01-12T17:46:36.272Z"
+    },
+    {
+      "id": "e66bf82e-189d-4bb1-9824-24e2c07a8f43",
+      "assetType": "finished_part",
+      "name": "Front Disc Brake Pad Kit",
+      "description": "Ensure optimal vehicle safety with our Disc Brake Pad Kit Front without Fitting Parts. Genuine Toyota auto parts offer lasting performance. Your key to efficient, reliable braking.",
+      "images": [
+        "https://epc-images.toyota.com/04465-02010.webp"
+      ],
+      "sellerId": "demo-seller-1",
+      "seller": {
+        "name": "Demo Seller",
+        "location": "Ontario, Canada"
+      },
+      "specs": {
+        "material": "Not specified",
+        "dimensions": "Not specified",
+        "form": "Kit",
+        "weight": "Not specified",
+        "partNumber": "",
+        "manufacturer": "Toyota Genuine",
+        "specifications": {
+          "partNumber": "0446502010",
+          "mpn": "0446502010"
+        },
+        "compatibility": "Not specified",
+        "condition": "New"
+      },
+      "pricing": {
+        "basePrice": 105.63,
+        "currency": "USD",
+        "unit": "unit"
+      },
+      "availability": {
+        "status": "In Stock",
+        "quantity": null,
+        "leadTimeDays": 7,
+        "minimumOrder": 1
+      },
+      "status": "draft",
+      "views": 6,
+      "inquiries": 0,
+      "verification": {
+        "tier": "basic",
+        "badges": []
+      },
+      "nafta": {
+        "enabled": false,
+        "rvc": null,
+        "qualifies": null
+      },
+      "intellectualProperty": [],
+      "shopCompliance": [],
+      "documents": [],
+      "createdAt": "2026-02-10T00:03:47.290Z",
+      "updatedAt": "2026-02-10T00:03:47.290Z"
+    },
+    {
+      "id": "955fabff-d3e8-4bb7-95d2-908cb1309070",
+      "assetType": "finished_part",
+      "name": "Supreme Collision Parts Group Wheel ALYCH085U10",
+      "description": "Reconditioned OEM Aluminum Alloy Wheel, 17 X 7, 43MM Offset, 5 Wide Spokes, 5 Lug, 4.5 Inch Bolt Pattern, Sparkle Silver",
+      "images": [
+        "https://contentassets.autozone.com/product_image/USA/7644/KFKP/ALYCH085U10/ALYCH085U10-01.jpg",
+        "https://www.autozone.com/images/vehicle-new.svg",
+        "https://www.autozone.com/images/chat-bubbles-white.svg"
+      ],
+      "sellerId": "demo-seller-1",
+      "seller": {
+        "name": "Demo Seller",
+        "location": "Ontario, Canada"
+      },
+      "specs": {
+        "material": "Aluminum Alloy",
+        "dimensions": {
+          "diameter": "17 inches",
+          "width": "7 inches",
+          "offset": "43MM",
+          "boltPattern": "4.5 inches"
+        },
+        "form": "Wheel",
+        "weight": "",
+        "partNumber": "ALYCH085U10",
+        "manufacturer": "Supreme Collision Parts Group",
+        "specifications": {
+          "mpn": "ALYCH085U10",
+          "sku": "1000000"
+        },
+        "compatibility": "",
+        "condition": "Reconditioned"
+      },
+      "pricing": {
+        "basePrice": 322.99,
+        "currency": "USD",
+        "unit": "unit"
+      },
+      "availability": {
+        "status": "OutOfStock",
+        "quantity": 0,
+        "leadTimeDays": 7,
+        "minimumOrder": 1
+      },
+      "status": "draft",
+      "views": 1,
+      "inquiries": 0,
+      "verification": {
+        "tier": "basic",
+        "badges": []
+      },
+      "nafta": {
+        "enabled": false,
+        "rvc": null,
+        "qualifies": null
+      },
+      "intellectualProperty": [],
+      "shopCompliance": [],
+      "documents": [],
+      "createdAt": "2026-02-10T00:43:31.199Z",
+      "updatedAt": "2026-02-10T00:43:31.199Z"
+    },
+    {
+      "id": "594d742f-9bb7-4660-bf01-04dfae5d04b3",
+      "assetType": "finished_part",
+      "name": "Quality Chain Tire Snow Chain 3229",
+      "description": "Light Truck Wide Base Chain is a product specifically designed for road use only. Our carbon link chain has a regular design and meets the Class U & W from SAE traction device standards.",
+      "images": [
+        "https://contentassets.autozone.com/product_image/USA/1132/FJVW/3229/3229-01.jpg",
+        "https://contentassets.autozone.com/product_image/USA/1132/FJVW/3229/3229-02.jpg",
+        "https://contentassets.autozone.com/product_image/USA/1132/FJVW/3229/3229-03.jpg"
+      ],
+      "sellerId": "demo-seller-1",
+      "seller": {
+        "name": "Demo Seller",
+        "location": "Ontario, Canada"
+      },
+      "specs": {
+        "material": "Carbon link",
+        "dimensions": "",
+        "form": "Wide Base Chain",
+        "weight": "",
+        "partNumber": "3229",
+        "manufacturer": "Quality Chain",
+        "specifications": {
+          "mpn": "3229",
+          "sku": "926667",
+          "saeClass": "Class U & W"
+        },
+        "compatibility": "For road use applications only",
+        "condition": "new"
+      },
+      "pricing": {
+        "basePrice": 212.99,
+        "currency": "USD",
+        "unit": "unit"
+      },
+      "availability": {
+        "status": "In Stock",
+        "quantity": 0,
+        "leadTimeDays": 7,
+        "minimumOrder": 1
+      },
+      "status": "draft",
+      "views": 1,
+      "inquiries": 0,
+      "verification": {
+        "tier": "basic",
+        "badges": []
+      },
+      "nafta": {
+        "enabled": false,
+        "rvc": null,
+        "qualifies": null
+      },
+      "intellectualProperty": [],
+      "shopCompliance": [],
+      "documents": [],
+      "createdAt": "2026-02-10T00:50:41.247Z",
+      "updatedAt": "2026-02-10T00:50:41.247Z"
+    },
+    {
+      "id": "b5b1600f-665b-4179-aabe-778453088638",
+      "assetType": "finished_part",
+      "name": "VBUOO Cordless Vacuum Cleaner",
+      "description": "The VBUOO Cordless Vacuum Cleaner is a high-power, self-standing vacuum designed for efficient cleaning. It features a lightweight design, powerful suction, and a versatile range of attachments for various cleaning tasks.",
+      "images": [
+        "https://m.media-amazon.com/images/I/61V9vY1D2ML._AC_SL1500_.jpg",
+        "https://m.media-amazon.com/images/I/61k1F5D1YQL._AC_SL1500_.jpg",
+        "https://m.media-amazon.com/images/I/61W8G7s1gQL._AC_SL1500_.jpg",
+        "https://m.media-amazon.com/images/I/61H1g5m1gQL._AC_SL1500_.jpg"
+      ],
+      "sellerId": "demo-seller-1",
+      "seller": {
+        "name": "Demo Seller",
+        "location": "Ontario, Canada"
+      },
+      "specs": {
+        "material": "Plastic, Metal",
+        "dimensions": "Length: 12.6 inches, Width: 10.2 inches, Height: 43.3 inches",
+        "form": "Cordless vacuum cleaner",
+        "weight": "4.5 lbs",
+        "partNumber": "B0FR2F5R7Y",
+        "manufacturer": "VBUOO",
+        "specifications": {
+          "suctionPower": "15000Pa",
+          "batteryLife": "Up to 40 minutes",
+          "chargingTime": "4-5 hours",
+          "filterType": "HEPA filter",
+          "modelNumber": "VB-VC-2023"
+        },
+        "compatibility": "Compatible with various floor types including hardwood, carpet, and tile",
+        "condition": "New"
+      },
+      "pricing": {
+        "basePrice": 129.99,
+        "currency": "USD",
+        "unit": "unit"
+      },
+      "availability": {
+        "status": "In stock",
+        "quantity": 50,
+        "leadTimeDays": 7,
+        "minimumOrder": 1
+      },
+      "status": "draft",
+      "views": 1,
+      "inquiries": 0,
+      "verification": {
+        "tier": "basic",
+        "badges": []
+      },
+      "nafta": {
+        "enabled": false,
+        "rvc": null,
+        "qualifies": null
+      },
+      "intellectualProperty": [],
+      "shopCompliance": [],
+      "documents": [],
+      "createdAt": "2026-02-10T01:33:16.612Z",
+      "updatedAt": "2026-02-10T01:33:16.612Z"
     }
   ],
   "naftaInputs": [

@@ -2,7 +2,12 @@ import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import db from './db.js';
+
+// Configure Puppeteer with stealth plugin to avoid detection
+puppeteer.use(StealthPlugin());
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -222,23 +227,319 @@ class AIService {
   }
 
   /**
-   * Extract text content from a website URL
+   * Extract text content and image URLs from a website URL
    */
   async fetchWebsiteContent(url) {
+    let browser = null;
     try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5'
-        }
+      const urlObj = new URL(url);
+      console.log(`Fetching content from URL using Puppeteer: ${url}`);
+      
+      // Launch browser with stealth plugin
+      try {
+        browser = await puppeteer.launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+          ],
+          timeout: 60000 // 60 second timeout for browser launch (increased for slower systems)
+        });
+      } catch (launchError) {
+        console.error(`Failed to launch Puppeteer browser:`, launchError.message || launchError);
+        // Fallback to regular fetch if Puppeteer fails
+        console.log(`Falling back to regular fetch for ${url}`);
+        return await this.fetchWebsiteContentFallback(url);
+      }
+      
+      if (!browser) {
+        console.log(`Browser not launched, using fallback fetch for ${url}`);
+        return await this.fetchWebsiteContentFallback(url);
+      }
+      
+      const page = await browser.newPage();
+      
+      // Set realistic viewport
+      await page.setViewport({ 
+        width: 1920, 
+        height: 1080,
+        deviceScaleFactor: 1
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch URL: ${response.status}`);
+      // Set user agent
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Set additional headers
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0',
+        'DNT': '1'
+      });
+      
+      // Navigate with timeout - use 'domcontentloaded' for faster, more reliable loading
+      console.log(`Navigating to ${url}...`);
+      try {
+        await page.goto(url, { 
+          waitUntil: 'domcontentloaded', // Changed from 'networkidle2' for better reliability
+          timeout: 45000 // 45 second timeout (reduced from 60s for faster failure detection)
+        });
+      } catch (navError) {
+        // If navigation fails, try with a shorter timeout
+        console.log(`Navigation with domcontentloaded failed, trying load event...`);
+        try {
+          await page.goto(url, { 
+            waitUntil: 'load', 
+            timeout: 30000 // 30 second timeout (reduced from 40s)
+          });
+        } catch (loadError) {
+          // If both fail, try with commit (fastest option)
+          console.log(`Navigation with load failed, trying commit event...`);
+          await page.goto(url, { 
+            waitUntil: 'commit', 
+            timeout: 20000 // 20 second timeout
+          });
+        }
       }
+      
+      // Wait for JavaScript to execute and images to load
+      // For Amazon and similar sites, images are often lazy-loaded
+      console.log(`Waiting for page to fully load...`);
+      await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000)); // 1.5-2.5 seconds (reduced from 3-5)
+      
+      // For Amazon specifically, wait for product images to load (optimized for speed)
+      if (url.includes('amazon.com')) {
+        try {
+          // Use Promise.race to enforce a maximum timeout for Amazon-specific operations
+          const amazonTimeout = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Amazon image wait timeout')), 8000); // Max 8 seconds total
+          });
+          
+          const amazonImageWait = (async () => {
+            // Scroll to trigger lazy loading
+            await page.evaluate(() => {
+              window.scrollTo(0, document.body.scrollHeight / 2);
+            });
+            await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1000ms
+            
+            // Try only the most common selectors first (reduced from 7 to 4)
+            const selectors = [
+              '#landingImage',
+              'img[data-a-image-name]',
+              '#main-image-container img',
+              'img[src*="media-amazon.com"]'
+            ];
+            
+            let found = false;
+            for (const selector of selectors) {
+              try {
+                // Reduced timeout from 5000ms to 1500ms per selector
+                await page.waitForSelector(selector, { timeout: 1500 });
+                console.log(`Found Amazon images with selector: ${selector}`);
+                found = true;
+                break;
+              } catch (e) {
+                // Try next selector quickly
+                continue;
+              }
+            }
+            
+            if (!found) {
+              console.log('Amazon image containers not found with standard selectors, trying quick check...');
+              // Reduced timeout from 10000ms to 3000ms
+              await page.waitForFunction(() => {
+                return document.querySelectorAll('img[src*="media-amazon.com"]').length > 0;
+              }, { timeout: 3000 }).catch(() => {
+                console.log('No Amazon media images found, continuing...');
+              });
+            }
+            
+            // Reduced wait from 2000ms to 500ms
+            await new Promise(resolve => setTimeout(resolve, 500));
+          })();
+          
+          // Race between Amazon wait and timeout
+          await Promise.race([amazonImageWait, amazonTimeout]).catch(() => {
+            console.log('Amazon image wait exceeded timeout, continuing with available content...');
+          });
+        } catch (e) {
+          console.log('Could not wait for Amazon images, continuing...', e.message);
+        }
+      }
+      
+      // Extract images from the rendered DOM (not just HTML source)
+      // This captures images loaded by JavaScript
+      const renderedImageUrls = await page.evaluate(() => {
+        const images = [];
+        const seen = new Set();
+        
+        // For Amazon, prioritize product image containers
+        const amazonSelectors = [
+          '#landingImage',
+          '#main-image-container img',
+          '.a-dynamic-image',
+          '[data-a-image-name]',
+          '#imageBlock_feature_div img',
+          '#altImages img',
+          '.a-button-selected img'
+        ];
+        
+        // Get Amazon product images first (if on Amazon)
+        if (window.location.hostname.includes('amazon')) {
+          for (const selector of amazonSelectors) {
+            document.querySelectorAll(selector).forEach(img => {
+              const sources = [
+                img.src,
+                img.getAttribute('data-src'),
+                img.getAttribute('data-a-dynamic-image'),
+                img.getAttribute('data-old-src'),
+                img.currentSrc
+              ];
+              
+              for (const src of sources) {
+                if (src && src.startsWith('http') && !seen.has(src)) {
+                  const srcLower = src.toLowerCase();
+                  // Amazon product images are typically from m.media-amazon.com
+                  if (srcLower.includes('media-amazon.com') && 
+                      srcLower.match(/\.(jpg|jpeg|png|gif|webp)/) &&
+                      !srcLower.includes('placeholder') &&
+                      !srcLower.includes('spinner')) {
+                    images.push(src);
+                    seen.add(src);
+                  }
+                }
+              }
+            });
+          }
+        }
+        
+        // Get all other img elements
+        document.querySelectorAll('img').forEach(img => {
+          // Skip if already processed (for Amazon)
+          if (window.location.hostname.includes('amazon') && 
+              (img.closest('#imageBlock_feature_div') || 
+               img.closest('#altImages') ||
+               img.hasAttribute('data-a-image-name'))) {
+            return; // Already processed above
+          }
+          
+          // Try multiple sources in order of preference
+          const sources = [
+            img.src,                    // Current src
+            img.getAttribute('data-src'), // Lazy loading
+            img.getAttribute('data-lazy'), // Another lazy loading pattern
+            img.getAttribute('data-original'), // Original image
+            img.getAttribute('data-a-dynamic-image'), // Amazon specific
+            img.currentSrc              // Current source (for srcset)
+          ];
+          
+          for (const src of sources) {
+            if (src && src.startsWith('http') && !seen.has(src)) {
+              // Filter out placeholder and non-product images
+              const srcLower = src.toLowerCase();
+              if (!srcLower.includes('placeholder') && 
+                  !srcLower.includes('spinner') && 
+                  !srcLower.includes('loading') &&
+                  !srcLower.includes('1x1') &&
+                  !srcLower.includes('pixel') &&
+                  !srcLower.includes('logo') &&
+                  !srcLower.includes('icon') &&
+                  srcLower.match(/\.(jpg|jpeg|png|gif|webp)/)) {
+                images.push(src);
+                seen.add(src);
+              }
+            }
+          }
+        });
+        
+        return images;
+      });
+      
+      console.log(`Found ${renderedImageUrls.length} images from rendered DOM`);
+      
+      // Get page content
+      const html = await page.content();
+      console.log(`Successfully fetched ${html.length} characters from ${url}`);
+      
+      // Get text content
+      const textContent = await page.evaluate(() => {
+        return document.body.innerText || '';
+      });
 
-      const html = await response.text();
+      // Build a compact, product-focused payload for Amazon pages to avoid sending massive page text.
+      let amazonFocusedText = '';
+      if (url.includes('amazon.com')) {
+        amazonFocusedText = await page.evaluate(() => {
+          const readText = (selector) => {
+            const el = document.querySelector(selector);
+            return el ? el.textContent.trim() : '';
+          };
+          const readList = (selector) =>
+            Array.from(document.querySelectorAll(selector))
+              .map(el => el.textContent.replace(/\s+/g, ' ').trim())
+              .filter(Boolean);
+
+          const title = readText('#productTitle');
+          const brand = readText('#bylineInfo');
+          const price =
+            readText('.a-price .a-offscreen') ||
+            readText('#corePriceDisplay_desktop_feature_div .a-offscreen') ||
+            readText('#priceblock_ourprice') ||
+            readText('#priceblock_dealprice');
+          const bullets = readList('#feature-bullets li span.a-list-item').slice(0, 15);
+          const detailsRows = Array.from(
+            document.querySelectorAll(
+              '#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr'
+            )
+          )
+            .map(row => {
+              const cells = row.querySelectorAll('th, td');
+              if (cells.length < 2) return '';
+              const key = cells[0].textContent.replace(/\s+/g, ' ').trim();
+              const value = cells[1].textContent.replace(/\s+/g, ' ').trim();
+              return key && value ? `${key}: ${value}` : '';
+            })
+            .filter(Boolean)
+            .slice(0, 30);
+          const detailBullets = readList('#detailBullets_feature_div li').slice(0, 30);
+
+          const sections = [];
+          if (title) sections.push(`Title: ${title}`);
+          if (brand) sections.push(`Brand: ${brand}`);
+          if (price) sections.push(`Price: ${price}`);
+          if (bullets.length) sections.push(`Features:\n- ${bullets.join('\n- ')}`);
+          if (detailsRows.length) sections.push(`Technical Details:\n- ${detailsRows.join('\n- ')}`);
+          if (detailBullets.length) sections.push(`Additional Details:\n- ${detailBullets.join('\n- ')}`);
+          return sections.join('\n\n');
+        });
+      }
+      
+      // Close browser
+      await browser.close();
+      browser = null;
+      
+      const baseUrl = new URL(url);
+      
+      // Extract image URLs from both HTML source and rendered DOM
+      const htmlImageUrls = this.extractImageUrls(html, baseUrl);
+      console.log(`Extracted ${htmlImageUrls.length} image URLs from HTML source`);
+      
+      // Combine and deduplicate
+      const allImageUrls = [...new Set([...htmlImageUrls, ...renderedImageUrls])];
+      console.log(`Total unique image URLs: ${allImageUrls.length}`);
       
       // Better HTML parsing - preserve structure and important data
       // Remove scripts and styles
@@ -252,7 +553,169 @@ class AIService {
       const dataMatches = html.match(/data-[^=]+="[^"]*"/gi) || [];
       const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
       
-      // Extract text content with better structure preservation
+      // Prefer compact Amazon-specific extraction to keep prompt size low.
+      if (amazonFocusedText && amazonFocusedText.trim().length > 0) {
+        text = amazonFocusedText.trim();
+      } else if (textContent && textContent.trim().length > 0) {
+        text = textContent.trim();
+      } else {
+        // Fallback to HTML parsing
+        text = text
+          .replace(/<h[1-6][^>]*>/gi, '\n### ')
+          .replace(/<\/h[1-6]>/gi, '\n')
+          .replace(/<p[^>]*>/gi, '\n')
+          .replace(/<\/p>/gi, '\n')
+          .replace(/<div[^>]*>/gi, '\n')
+          .replace(/<\/div>/gi, '\n')
+          .replace(/<li[^>]*>/gi, '\n- ')
+          .replace(/<\/li>/gi, '\n')
+          .replace(/<td[^>]*>/gi, ' | ')
+          .replace(/<\/td>/gi, '')
+          .replace(/<th[^>]*>/gi, ' | ')
+          .replace(/<\/th>/gi, '')
+          .replace(/<tr[^>]*>/gi, '\n')
+          .replace(/<\/tr>/gi, '\n')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+      
+      // Add structured data if found
+      if (jsonLdMatches.length > 0) {
+        text = '\n=== STRUCTURED DATA ===\n' + jsonLdMatches.join('\n') + '\n\n=== PAGE CONTENT ===\n' + text;
+      }
+      
+      // Add image URLs to the content for AI extraction
+      if (allImageUrls.length > 0) {
+        text += '\n\n=== IMAGE URLs ===\n' + allImageUrls.join('\n');
+      }
+      
+      // Keep payload compact so downstream AI extraction remains fast and reliable.
+      const maxReturnedChars = parseInt(process.env.AI_FETCH_MAX_TEXT_CHARS || '50000', 10);
+      return {
+        text: text.substring(0, maxReturnedChars),
+        imageUrls: allImageUrls
+      };
+    } catch (error) {
+      // Ensure browser is closed even on error
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (closeError) {
+          console.error('Error closing browser:', closeError);
+        }
+      }
+      
+      // Handle timeout specifically
+      if (error.name === 'TimeoutError' || error.message.includes('timeout') || error.message.includes('Navigation timeout')) {
+        console.error(`Timeout fetching URL ${url} (exceeded timeout limit)`);
+        throw new Error(`Request timeout. The website took too long to respond (${new URL(url).host}). Please try again or use a different URL.`);
+      }
+      
+      // Handle network errors
+      if (error.message.includes('net::ERR_') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+        console.error(`Network error fetching URL ${url}:`, error.message);
+        throw new Error(`Network error. Could not connect to the website. Please check the URL and try again.`);
+      }
+      
+      // Handle page errors (404, 403, etc.)
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        throw new Error(`Page not found (404). The URL may be invalid or the page may have been removed.`);
+      }
+      
+      if (error.message.includes('403') || error.message.includes('forbidden')) {
+        throw new Error(`Access forbidden (403). The website (${new URL(url).host}) may be blocking automated requests. Some websites require manual data entry.`);
+      }
+      
+      console.error(`Error fetching URL ${url}:`, error);
+      
+      // If Puppeteer fails, try fallback to regular fetch
+      console.log(`Puppeteer failed, trying fallback fetch for ${url}`);
+      try {
+        return await this.fetchWebsiteContentFallback(url);
+      } catch (fallbackError) {
+        // If fallback also fails, throw the original error
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Fallback method using regular fetch if Puppeteer fails
+   */
+  async fetchWebsiteContentFallback(url) {
+    try {
+      const urlObj = new URL(url);
+      console.log(`Using fallback fetch for: ${url}`);
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      // Browser-like headers
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Referer': `${urlObj.protocol}//${urlObj.host}/`,
+          'Origin': `${urlObj.protocol}//${urlObj.host}`,
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Cache-Control': 'max-age=0',
+          'DNT': '1'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error(`Access forbidden (403). The website (${urlObj.host}) may be blocking automated requests.`);
+        } else if (response.status === 404) {
+          throw new Error(`Page not found (404). The URL may be invalid or the page may have been removed.`);
+        } else if (response.status === 429) {
+          throw new Error(`Too many requests (429). Please wait a moment and try again.`);
+        } else {
+          throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+        }
+      }
+
+      // Timeout for reading response body
+      const readTimeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout reading response')), 20000);
+      });
+      
+      let html;
+      try {
+        html = await Promise.race([response.text(), readTimeout]);
+      } catch (readError) {
+        if (readError.message === 'Timeout reading response') {
+          throw new Error(`Timeout reading response from ${urlObj.host}. The page may be too large or the connection is slow.`);
+        }
+        throw readError;
+      }
+      
+      console.log(`Successfully read ${html.length} characters from ${url} (fallback)`);
+      
+      const baseUrl = new URL(url);
+      const imageUrls = this.extractImageUrls(html, baseUrl);
+      console.log(`Extracted ${imageUrls.length} image URLs from ${url} (fallback)`);
+      
+      // Parse HTML to text
+      let text = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+      
+      const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+      
       text = text
         .replace(/<h[1-6][^>]*>/gi, '\n### ')
         .replace(/<\/h[1-6]>/gi, '\n')
@@ -272,15 +735,439 @@ class AIService {
         .replace(/\s+/g, ' ')
         .trim();
       
-      // Add structured data if found
       if (jsonLdMatches.length > 0) {
         text = '\n=== STRUCTURED DATA ===\n' + jsonLdMatches.join('\n') + '\n\n=== PAGE CONTENT ===\n' + text;
       }
       
-      return text.substring(0, 150000); // Increased limit for better extraction
+      if (imageUrls.length > 0) {
+        text += '\n\n=== IMAGE URLs ===\n' + imageUrls.join('\n');
+      }
+      
+      return {
+        text: text.substring(0, 150000),
+        imageUrls: imageUrls
+      };
     } catch (error) {
-      console.error(`Error fetching URL ${url}:`, error);
+      console.error(`Fallback fetch also failed for ${url}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Extract image URLs from HTML content
+   */
+  extractImageUrls(html, baseUrl) {
+    const imageUrls = new Set();
+    const imageContexts = new Map(); // Store context for each image
+    const priorityImages = new Set(); // Images from structured data (higher priority)
+    
+    // FIRST: Extract from JSON-LD structured data (most reliable for products)
+    const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+    for (const jsonLd of jsonLdMatches) {
+      try {
+        const jsonContent = jsonLd.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
+        const data = JSON.parse(jsonContent);
+        this.extractImagesFromJsonLd(data, baseUrl, priorityImages);
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+    }
+    
+    // Extract from Open Graph and Twitter Card meta tags (also reliable)
+    const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+    if (ogImageMatch && ogImageMatch[1]) {
+      const imgUrl = this.resolveImageUrl(ogImageMatch[1], baseUrl);
+      if (imgUrl && this.isValidImageUrl(imgUrl)) {
+        priorityImages.add(imgUrl);
+      }
+    }
+    
+    const twitterImageMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i);
+    if (twitterImageMatch && twitterImageMatch[1]) {
+      const imgUrl = this.resolveImageUrl(twitterImageMatch[1], baseUrl);
+      if (imgUrl && this.isValidImageUrl(imgUrl)) {
+        priorityImages.add(imgUrl);
+      }
+    }
+    
+    // Add priority images to main set with high score
+    priorityImages.forEach(url => {
+      imageUrls.add(url);
+      imageContexts.set(url, {
+        isInProductContainer: true,
+        hasProductAlt: true,
+        hasProductClass: true,
+        isInNonProductContainer: false,
+        isFromStructuredData: true
+      });
+    });
+    
+    // Extract from <img> tags with context (but exclude those in script tags)
+    // First, remove script tags content to avoid extracting images from dynamic injection
+    const htmlWithoutScripts = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    const imgMatches = htmlWithoutScripts.match(/<img[^>]+>/gi) || [];
+    for (const imgTag of imgMatches) {
+      // Get surrounding context (parent element classes, IDs, etc.)
+      const contextMatch = html.match(new RegExp(`[^>]*${imgTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^<]*`, 'i'));
+      const context = contextMatch ? contextMatch[0] : '';
+      const contextLower = context.toLowerCase();
+      
+      // Check if image is in a product-related container
+      const productContainerPatterns = [
+        'product', 'item', 'goods', 'catalog', 'gallery', 'listing',
+        'detail', 'view', 'image', 'photo', 'picture', 'main-image',
+        'product-image', 'product-img', 'item-image', 'thumbnail'
+      ];
+      const isInProductContainer = productContainerPatterns.some(pattern => 
+        contextLower.includes(`class="${pattern}`) || 
+        contextLower.includes(`class='${pattern}`) ||
+        contextLower.includes(`id="${pattern}`) ||
+        contextLower.includes(`id='${pattern}`)
+      );
+      
+      // Check if image has product-related attributes
+      const hasProductAlt = imgTag.match(/alt=["']([^"']*product[^"']*|item[^"']*|goods[^"']*)/i);
+      const hasProductClass = imgTag.match(/class=["']([^"']*product[^"']*|item[^"']*|goods[^"']*)/i);
+      
+      // Skip if clearly not a product image (in navigation, header, footer, etc.)
+      const nonProductContainers = ['nav', 'header', 'footer', 'menu', 'sidebar', 'widget', 'social', 'share'];
+      const isInNonProductContainer = nonProductContainers.some(pattern => 
+        contextLower.includes(`class="${pattern}`) || 
+        contextLower.includes(`id="${pattern}`)
+      );
+      
+      // Try src attribute
+      const srcMatch = imgTag.match(/src=["']([^"']+)["']/i);
+      if (srcMatch && srcMatch[1]) {
+        const imgUrl = this.resolveImageUrl(srcMatch[1], baseUrl);
+        if (imgUrl && this.isValidImageUrl(imgUrl)) {
+          // Only add if it's likely a product image
+          if (isInProductContainer || hasProductAlt || hasProductClass || (!isInNonProductContainer && !this.isLikelyNonProductImage(imgUrl))) {
+            imageUrls.add(imgUrl);
+            imageContexts.set(imgUrl, {
+              isInProductContainer,
+              hasProductAlt: !!hasProductAlt,
+              hasProductClass: !!hasProductClass,
+              isInNonProductContainer
+            });
+          }
+        }
+      }
+      
+      // Try data-src (lazy loading)
+      const dataSrcMatch = imgTag.match(/data-src=["']([^"']+)["']/i);
+      if (dataSrcMatch && dataSrcMatch[1]) {
+        const imgUrl = this.resolveImageUrl(dataSrcMatch[1], baseUrl);
+        if (imgUrl && this.isValidImageUrl(imgUrl)) {
+          if (isInProductContainer || hasProductAlt || hasProductClass || (!isInNonProductContainer && !this.isLikelyNonProductImage(imgUrl))) {
+            imageUrls.add(imgUrl);
+            imageContexts.set(imgUrl, {
+              isInProductContainer,
+              hasProductAlt: !!hasProductAlt,
+              hasProductClass: !!hasProductClass,
+              isInNonProductContainer
+            });
+          }
+        }
+      }
+      
+      // Try srcset
+      const srcsetMatch = imgTag.match(/srcset=["']([^"']+)["']/i);
+      if (srcsetMatch && srcsetMatch[1]) {
+        const srcsetUrls = srcsetMatch[1].split(',').map(s => s.trim().split(/\s+/)[0]);
+        for (const srcsetUrl of srcsetUrls) {
+          const imgUrl = this.resolveImageUrl(srcsetUrl, baseUrl);
+          if (imgUrl && this.isValidImageUrl(imgUrl)) {
+            if (isInProductContainer || hasProductAlt || hasProductClass || (!isInNonProductContainer && !this.isLikelyNonProductImage(imgUrl))) {
+              imageUrls.add(imgUrl);
+              imageContexts.set(imgUrl, {
+                isInProductContainer,
+                hasProductAlt: !!hasProductAlt,
+                hasProductClass: !!hasProductClass,
+                isInNonProductContainer
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    
+    // Filter out common non-product images (logos, icons, etc.)
+    // Prioritize images with product context
+    const filteredUrls = Array.from(imageUrls)
+      .map(url => ({
+        url,
+        context: imageContexts.get(url) || {},
+        score: this.calculateProductImageScore(url, imageContexts.get(url))
+      }))
+      .filter(item => {
+        const urlLower = item.url.toLowerCase();
+        
+        // Exclude if clearly non-product based on URL
+        if (this.isLikelyNonProductImage(item.url)) {
+          return false;
+        }
+        
+        // Exclude common non-product image paths
+        const excludePatterns = [
+          '/logo', '/icon', '/favicon', '/sprite', '/button', '/arrow',
+          '/social', '/share', '/badge', '/banner', '/header', '/footer',
+          '/avatar', '/profile', '/placeholder', '/loading', '/spinner',
+          '/nav', '/navigation', '/menu', '/search', '/cart', '/checkout',
+          '/account', '/user', '/sign', '/login', '/register', '/help',
+          '/support', '/contact', '/about', '/blog', '/news', '/testimonial',
+          '/review', '/rating', '/star', '/checkmark', '/close', '/delete',
+          '/edit', '/add', '/remove', '/plus', '/minus', '/play', '/pause'
+        ];
+        
+        if (excludePatterns.some(pattern => urlLower.includes(pattern))) {
+          return false;
+        }
+        
+        // Exclude if in non-product container and no product indicators
+        if (item.context.isInNonProductContainer && 
+            !item.context.isInProductContainer && 
+            !item.context.hasProductAlt && 
+            !item.context.hasProductClass) {
+          return false;
+        }
+        
+        return true;
+      })
+      .sort((a, b) => b.score - a.score) // Sort by product image score (highest first)
+      .map(item => item.url)
+      .slice(0, 10); // Limit to top 10 most likely product images
+    
+    return filteredUrls;
+  }
+
+  /**
+   * Calculate a score indicating how likely an image is a product image
+   */
+  calculateProductImageScore(url, context = {}) {
+    let score = 0;
+    const urlLower = url.toLowerCase();
+    
+    // Highest score for images from structured data (JSON-LD, Open Graph)
+    if (context.isFromStructuredData) score += 20;
+    
+    // Higher score for images in product containers
+    if (context.isInProductContainer) score += 10;
+    if (context.hasProductAlt) score += 5;
+    if (context.hasProductClass) score += 5;
+    
+    // Product-related URL patterns
+    const productPatterns = [
+      { pattern: '/product', score: 8 },
+      { pattern: '/item', score: 7 },
+      { pattern: '/goods', score: 7 },
+      { pattern: '/catalog', score: 6 },
+      { pattern: '/gallery', score: 5 },
+      { pattern: '/p/', score: 8 },
+      { pattern: '/item/', score: 7 },
+      { pattern: 'epc-images', score: 10 }, // Common product image CDN
+      { pattern: 'eparts-images', score: 10 }
+    ];
+    
+    productPatterns.forEach(({ pattern, score: patternScore }) => {
+      if (urlLower.includes(pattern)) {
+        score += patternScore;
+      }
+    });
+    
+    // Penalize non-product indicators
+    if (context.isInNonProductContainer) score -= 10;
+    
+    // Heavy penalty for browser logos and CDN UI elements
+    if (urlLower.includes('browser-logos') || 
+        urlLower.includes('cdnjs.cloudflare.com/ajax/libs/browser-logos')) {
+      score -= 50;
+    }
+    
+    return score;
+  }
+
+  /**
+   * Resolve relative image URLs to absolute URLs
+   */
+  resolveImageUrl(url, baseUrl) {
+    try {
+      // Already absolute URL
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      
+      // Protocol-relative URL
+      if (url.startsWith('//')) {
+        return baseUrl.protocol + url;
+      }
+      
+      // Absolute path
+      if (url.startsWith('/')) {
+        return baseUrl.origin + url;
+      }
+      
+      // Relative path
+      return new URL(url, baseUrl.href).href;
+    } catch (e) {
       return null;
+    }
+  }
+
+  /**
+   * Check if URL is a valid image URL
+   */
+  isValidImageUrl(url) {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    const urlLower = url.toLowerCase();
+    
+    // Check if URL has image extension
+    if (imageExtensions.some(ext => urlLower.includes(ext))) {
+      return true;
+    }
+    
+    // Check if URL contains image-related paths
+    if (urlLower.includes('/image') || urlLower.includes('/img') || urlLower.includes('/photo') || urlLower.includes('/picture')) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Normalize image URL by removing tracking/analytics parameters while preserving important ones
+   * This helps identify duplicate images that differ only by query parameters
+   */
+  normalizeImageUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      
+      // Remove common tracking/analytics parameters that don't affect the image
+      const paramsToRemove = [
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+        'ref', 'referrer', 'source', 'campaign', 'fbclid', 'gclid',
+        'twclid', 'li_fat_id', '_ga', '_gid', 'tracking', 'track',
+        'clickid', 'affiliate', 'partner', 'pid', 'sid'
+      ];
+      
+      paramsToRemove.forEach(param => {
+        urlObj.searchParams.delete(param);
+      });
+      
+      // For Amazon images, normalize common size parameters that don't change the image
+      // Amazon uses patterns like ?_AC_SL1500_ or similar - keep the base URL
+      if (urlObj.hostname.includes('amazon') || urlObj.hostname.includes('amazonaws')) {
+        // Remove Amazon-specific tracking parameters but keep size indicators if they're in the path
+        const amazonTrackingParams = ['tag', 'linkCode', 'creative', 'creativeASIN', 'ref_'];
+        amazonTrackingParams.forEach(param => {
+          urlObj.searchParams.delete(param);
+        });
+      }
+      
+      return urlObj.toString();
+    } catch (e) {
+      // If URL parsing fails, return original
+      return url;
+    }
+  }
+
+  /**
+   * Check if URL is likely a non-product image (logo, icon, etc.)
+   */
+  isLikelyNonProductImage(url) {
+    const urlLower = url.toLowerCase();
+    const filename = urlLower.split('/').pop().split('?')[0];
+    
+    // Exclude browser logos and CDN-based UI elements
+    if (urlLower.includes('cdnjs.cloudflare.com/ajax/libs/browser-logos')) {
+      return true;
+    }
+    if (urlLower.includes('browser-logos')) {
+      return true;
+    }
+    
+    // Exclude common CDN paths for UI elements
+    const cdnUiPatterns = [
+      'cdnjs.cloudflare.com',
+      'jsdelivr.net',
+      'unpkg.com'
+    ];
+    if (cdnUiPatterns.some(cdn => urlLower.includes(cdn)) && 
+        (urlLower.includes('logo') || urlLower.includes('icon') || urlLower.includes('browser'))) {
+      return true;
+    }
+    
+    // Check filename for non-product indicators
+    const nonProductFilenamePatterns = [
+      'logo', 'icon', 'favicon', 'sprite', 'button', 'arrow',
+      'social', 'share', 'badge', 'banner', 'avatar', 'profile',
+      'placeholder', 'loading', 'spinner', 'nav', 'menu', 'search',
+      'cart', 'checkout', 'account', 'user', 'sign', 'login',
+      'close', 'delete', 'edit', 'add', 'remove', 'plus', 'minus',
+      'chrome', 'firefox', 'edge', 'safari', 'browser' // Browser logos
+    ];
+    
+    if (nonProductFilenamePatterns.some(pattern => filename.includes(pattern))) {
+      return true;
+    }
+    
+    // Check URL path for non-product indicators
+    const nonProductPathPatterns = [
+      '/logo', '/icon', '/favicon', '/sprite', '/button', '/arrow',
+      '/social', '/share', '/badge', '/banner', '/header', '/footer',
+      '/nav', '/navigation', '/menu', '/widget', '/sidebar',
+      '/browser', '/browsers' // Browser-related paths
+    ];
+    
+    if (nonProductPathPatterns.some(pattern => urlLower.includes(pattern))) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Extract images from JSON-LD structured data
+   */
+  extractImagesFromJsonLd(data, baseUrl, imageUrls) {
+    if (!data || typeof data !== 'object') return;
+    
+    // Handle arrays
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        this.extractImagesFromJsonLd(item, baseUrl, imageUrls);
+      }
+      return;
+    }
+    
+    // Check for image property
+    if (data.image) {
+      if (typeof data.image === 'string') {
+        const imgUrl = this.resolveImageUrl(data.image, baseUrl);
+        if (imgUrl && this.isValidImageUrl(imgUrl)) {
+          imageUrls.add(imgUrl);
+        }
+      } else if (Array.isArray(data.image)) {
+        for (const img of data.image) {
+          const imgUrl = this.resolveImageUrl(typeof img === 'string' ? img : img.url || img['@id'], baseUrl);
+          if (imgUrl && this.isValidImageUrl(imgUrl)) {
+            imageUrls.add(imgUrl);
+          }
+        }
+      } else if (data.image.url || data.image['@id']) {
+        const imgUrl = this.resolveImageUrl(data.image.url || data.image['@id'], baseUrl);
+        if (imgUrl && this.isValidImageUrl(imgUrl)) {
+          imageUrls.add(imgUrl);
+        }
+      }
+    }
+    
+    // Recursively check nested objects
+    for (const key in data) {
+      if (key !== 'image' && typeof data[key] === 'object') {
+        this.extractImagesFromJsonLd(data[key], baseUrl, imageUrls);
+      }
     }
   }
 
@@ -305,7 +1192,7 @@ class AIService {
   /**
    * Use OpenAI to extract assets from content
    */
-  async extractAssetsWithAI(content) {
+  async extractAssetsWithAI(content, imageUrls = []) {
     // Re-initialize OpenAI in case env vars were added after module load
     if (!this.openai && process.env.OPENAI_API_KEY) {
       this.initializeOpenAI();
@@ -324,6 +1211,20 @@ class AIService {
     console.log('Using OpenAI for asset extraction...');
     
     try {
+      const imageContext = imageUrls.length > 0 
+        ? `\n\n=== AVAILABLE IMAGE URLs (PRODUCT IMAGES ONLY) ===\n${imageUrls.slice(0, 20).join('\n')}\n\nIMPORTANT: Only include images that are clearly PRODUCT IMAGES (showing the actual product/item being sold). DO NOT include:
+- Logos, icons, or UI elements
+- Navigation images, buttons, or decorative graphics
+- User avatars or profile pictures
+- Banner images or promotional graphics
+- Social media icons or share buttons
+
+Match images to products based on context, product names, and descriptions. Include 2-5 relevant PRODUCT images per product when available.`
+        : '';
+
+      const maxContentChars = parseInt(process.env.AI_EXTRACT_MAX_CONTENT_CHARS || '30000', 10);
+      const trimmedContent = content.substring(0, maxContentChars);
+
       const prompt = `You are an expert at analyzing manufacturing, industrial, and e-commerce content to extract complete product information.
 
 Analyze the following content and extract ALL identifiable products, materials, equipment, or services. For EACH asset found, extract EVERY available detail including:
@@ -349,6 +1250,9 @@ DETAILED SPECIFICATIONS (extract ALL available):
 - compatibility: Compatibility information if mentioned
 - attributes: Any other relevant attributes or features
 
+IMAGES:
+- images: Array of image URLs that are relevant to this product. CRITICAL: Only include PRODUCT IMAGES (images showing the actual product/item). Exclude logos, icons, UI elements, banners, avatars, and decorative graphics. Match images to products based on context, product names, and descriptions. IMPORTANT: Include MULTIPLE product images (2-5) for each product when available. Do not limit to just 1 image - include all relevant product images.
+
 ADDITIONAL FIELDS:
 - attribute3: Additional important attribute or specification
 - attribute4: Additional important attribute or specification
@@ -360,14 +1264,15 @@ IMPORTANT:
 - Preserve part numbers, model numbers, SKUs, and other identifiers
 - Extract pricing information if available
 - Extract all specifications and technical details
+- Match image URLs to products when possible - include MULTIPLE relevant PRODUCT images (2-5) in the "images" array for each product. Only include images that show the actual product/item being sold. Exclude logos, icons, UI elements, and decorative graphics. If multiple product images are available for a product, include them all rather than just one.
 
-Return a JSON object with an "assets" array. Each asset should be a complete object with all available fields.
+Return a JSON object with an "assets" array. Each asset should be a complete object with all available fields including an "images" array.
 
 Content to analyze:
-${content.substring(0, 150000)}`;
+${trimmedContent}${imageContext}`;
 
       console.log('Sending request to OpenAI...');
-      const response = await this.openai.chat.completions.create({
+      const openAiCall = this.openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         messages: [
           {
@@ -380,9 +1285,14 @@ ${content.substring(0, 150000)}`;
           }
         ],
         temperature: 0.2, // Lower temperature for more consistent extraction
-        max_tokens: 4000, // Increased for more detailed responses
+        max_tokens: 3000,
         response_format: { type: 'json_object' }
       });
+      const openAiTimeoutMs = parseInt(process.env.AI_EXTRACT_OPENAI_TIMEOUT_MS || '45000', 10);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`OpenAI extraction timeout after ${openAiTimeoutMs}ms`)), openAiTimeoutMs);
+      });
+      const response = await Promise.race([openAiCall, timeoutPromise]);
 
       const responseContent = response.choices[0].message.content;
       console.log('OpenAI response received, length:', responseContent.length);
@@ -404,6 +1314,40 @@ ${content.substring(0, 150000)}`;
           }
         }
       }
+      
+      // Ensure each asset has an images array, and if not provided by AI, try to match images
+      // Track which images have been assigned to avoid duplicates
+      const assignedImages = new Set();
+      
+      assets = assets.map(asset => {
+        if (!asset.images || !Array.isArray(asset.images)) {
+          asset.images = [];
+        }
+        
+        // Deduplicate images already assigned by AI
+        asset.images = [...new Set(asset.images)];
+        
+        // Mark already assigned images
+        asset.images.forEach(img => assignedImages.add(img));
+        
+        // If AI assigned very few images (0-1) and we have more available, add more
+        if (asset.images.length <= 1 && imageUrls.length > asset.images.length) {
+          // Find unassigned images to add (deduplicated)
+          const unassignedImages = imageUrls.filter(img => !assignedImages.has(img));
+          
+          // Add up to 4 more images (total of 5 max per product)
+          const imagesToAdd = unassignedImages.slice(0, 5 - asset.images.length);
+          asset.images.push(...imagesToAdd);
+          
+          // Deduplicate again after adding
+          asset.images = [...new Set(asset.images)];
+          
+          // Mark these as assigned
+          imagesToAdd.forEach(img => assignedImages.add(img));
+        }
+        
+        return asset;
+      });
       
       console.log(`Extracted ${assets.length} asset(s) from content`);
       return assets;
@@ -481,19 +1425,53 @@ ${content.substring(0, 150000)}`;
     console.log('OpenAI initialized:', !!this.openai);
 
     // Process URLs
+    const allImageUrls = [];
+    const fetchErrors = [];
     for (const url of urls) {
       try {
         console.log(`Fetching content from URL: ${url}`);
-        const content = await this.fetchWebsiteContent(url);
-        if (content) {
-          console.log(`Fetched ${content.length} characters from ${url}`);
-          allContent += `\n\n--- Content from ${url} ---\n\n${content}`;
+        const startTime = Date.now();
+        
+        // Add a wrapper timeout to catch any hanging operations.
+        // Keep this bounded so the frontend request does not time out first.
+        const urlFetchPromise = this.fetchWebsiteContent(url);
+        const urlFetchTimeoutMs = parseInt(process.env.AI_FETCH_URL_TIMEOUT_MS || '60000', 10);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error(`Operation timeout: The request took longer than ${urlFetchTimeoutMs}ms`)), urlFetchTimeoutMs);
+        });
+        
+        const result = await Promise.race([urlFetchPromise, timeoutPromise]);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        
+        if (result && result.text) {
+          console.log(`Fetched ${result.text.length} characters from ${url} in ${elapsed}s`);
+          allContent += `\n\n--- Content from ${url} ---\n\n${result.text}`;
+          
+          // Collect image URLs
+          if (result.imageUrls && result.imageUrls.length > 0) {
+            console.log(`Found ${result.imageUrls.length} images from ${url}`);
+            allImageUrls.push(...result.imageUrls);
+          }
         } else {
           console.log(`No content fetched from ${url}`);
+          fetchErrors.push({ url, error: 'No content returned from URL' });
         }
       } catch (error) {
         console.error(`Error processing URL ${url}:`, error);
+        const errorMsg = error.message || 'Unknown error';
+        fetchErrors.push({ url, error: errorMsg });
+        
+        // For Amazon specifically, provide helpful message
+        if (url.includes('amazon.com')) {
+          console.error(`Amazon URL failed. Amazon has strict bot protection that blocks automated requests.`);
+        }
       }
+    }
+    
+    // If all URLs failed, throw an error with details
+    if (urls.length > 0 && allContent.length === 0 && fetchErrors.length > 0) {
+      const errorMessages = fetchErrors.map(e => `${e.url}: ${e.error}`).join('; ');
+      throw new Error(`Failed to fetch content from all URLs. Errors: ${errorMessages}`);
     }
 
     // Process files
@@ -515,9 +1493,16 @@ ${content.substring(0, 150000)}`;
     }
 
     console.log(`Total content length: ${allContent.length} characters`);
+    console.log(`Total images found: ${allImageUrls.length}`);
+    
+    // Normalize and deduplicate image URLs to avoid assigning the same image multiple times
+    // Normalize URLs by removing common tracking/analytics parameters that don't affect the image
+    const normalizedImageUrls = allImageUrls.map(url => this.normalizeImageUrl(url));
+    const uniqueImageUrls = [...new Set(normalizedImageUrls)];
+    console.log(`Unique images after normalization and deduplication: ${uniqueImageUrls.length} (from ${allImageUrls.length} total)`);
 
     // Extract assets using AI or basic extraction
-    const assets = await this.extractAssetsWithAI(allContent);
+    const assets = await this.extractAssetsWithAI(allContent, uniqueImageUrls);
     
     console.log(`Final assets extracted: ${assets.length}`);
     

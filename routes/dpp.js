@@ -104,6 +104,7 @@ router.get('/new/:assetType', async (req, res) => {
     prefillDpp = {
       name: aiData.name || '',
       description: aiData.description || '',
+      images: aiData.images || [], // Include images from AI extraction
       specs: {
         material: aiData.material || aiData.attribute3 || '',
         dimensions: aiData.dimensions || aiData.attribute4 || '',
@@ -130,10 +131,22 @@ router.get('/new/:assetType', async (req, res) => {
 // Create DPP
 router.post('/', async (req, res) => {
   try {
+    // Parse images from form (can be JSON string or array)
+    let images = [];
+    if (req.body.images) {
+      try {
+        images = typeof req.body.images === 'string' ? JSON.parse(req.body.images) : req.body.images;
+        if (!Array.isArray(images)) images = [];
+      } catch (e) {
+        images = [];
+      }
+    }
+
     const dppData = {
       assetType: req.body.assetType,
       name: req.body.name,
       description: req.body.description,
+      images: images, // Include images
       sellerId: req.body.sellerId || 'demo-seller-1', // In MVP, use demo seller
       seller: {
         name: req.body.sellerName || 'Demo Seller',
@@ -192,6 +205,11 @@ router.get('/:id/edit', async (req, res) => {
       });
     }
 
+    // Debug: Log images to see what we're working with
+    console.log('Edit form - DPP images:', dpp.images);
+    console.log('Edit form - DPP images type:', typeof dpp.images);
+    console.log('Edit form - DPP images is array:', Array.isArray(dpp.images));
+
     res.render('dpp/form', {
       title: `Edit ${dpp.name} • FABIE`,
       dpp,
@@ -212,9 +230,21 @@ router.get('/:id/edit', async (req, res) => {
 // Update DPP
 router.post('/:id', async (req, res) => {
   try {
+    // Parse images from form (can be JSON string or array)
+    let images = [];
+    if (req.body.images) {
+      try {
+        images = typeof req.body.images === 'string' ? JSON.parse(req.body.images) : req.body.images;
+        if (!Array.isArray(images)) images = [];
+      } catch (e) {
+        images = [];
+      }
+    }
+
     const updates = {
       name: req.body.name,
       description: req.body.description,
+      images: images, // Include images
       specs: {
         material: req.body.material,
         dimensions: req.body.dimensions,

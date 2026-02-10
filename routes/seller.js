@@ -142,9 +142,11 @@ router.post('/ai-powered/scan', upload.array('documents'), async (req, res) => {
     });
   } catch (error) {
     console.error('Error scanning sources:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Failed to scan sources' 
+      error: error.message || 'Failed to scan sources',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -176,6 +178,7 @@ router.post('/ai-powered/create-listings', async (req, res) => {
         assetType: assetTypeMap[asset.type] || asset.assetType || 'raw_material',
         name: asset.name || 'Unnamed Asset',
         description: asset.description || asset.specifications || '',
+        images: asset.images || [], // Include extracted images
         sellerId: DEMO_SELLER_ID,
         seller: {
           name: 'Demo Seller',

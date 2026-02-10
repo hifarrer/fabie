@@ -54,8 +54,21 @@
         </p>
         
         <div id="loading-indicator" style="display: none; text-align: center; padding: 24px;">
-          <div class="p">Scanning sources...</div>
+          <div class="p" style="margin-bottom: 16px;">Scanning sources...</div>
+          <div style="width: 100%; background: var(--panel, #1a1f2e); border-radius: 8px; overflow: hidden; height: 8px; position: relative;">
+            <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand, #3b82f6), var(--brand-light, #60a5fa)); border-radius: 8px; transition: width 0.3s ease; position: relative; overflow: hidden;">
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 1.5s infinite;"></div>
+            </div>
+          </div>
+          <div id="progress-text" style="margin-top: 8px; font-size: 0.875rem; color: var(--muted);">Initializing...</div>
         </div>
+        
+        <style>
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        </style>
 
         <div id="assets-container">
           <div class="p" style="color: var(--muted); text-align: center; padding: 24px;">
@@ -165,10 +178,46 @@ async function scanSources() {
   const scanBtn = document.getElementById('scan-btn');
   const loadingIndicator = document.getElementById('loading-indicator');
   const assetsContainer = document.getElementById('assets-container');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
   
   scanBtn.disabled = true;
   loadingIndicator.style.display = 'block';
   assetsContainer.innerHTML = '';
+  
+  // Reset progress bar
+  progressBar.style.width = '0%';
+  progressText.textContent = 'Initializing...';
+  
+  // Simulated progress bar - animate from 0% to 90% over 12 seconds
+  let currentProgress = 0;
+  const targetProgress = 90;
+  const duration = 12000; // 12 seconds
+  const interval = 50; // Update every 50ms
+  const increment = (targetProgress / duration) * interval;
+  
+  // Declare progressInterval outside try block so it can be cleared in catch/finally
+  let progressInterval = setInterval(() => {
+    currentProgress += increment;
+    if (currentProgress >= targetProgress) {
+      currentProgress = targetProgress;
+      clearInterval(progressInterval);
+    }
+    progressBar.style.width = currentProgress + '%';
+    
+    // Update progress text based on progress
+    if (currentProgress < 20) {
+      progressText.textContent = 'Connecting to sources...';
+    } else if (currentProgress < 40) {
+      progressText.textContent = 'Fetching content...';
+    } else if (currentProgress < 60) {
+      progressText.textContent = 'Extracting information...';
+    } else if (currentProgress < 80) {
+      progressText.textContent = 'Analyzing with AI...';
+    } else {
+      progressText.textContent = 'Finalizing results...';
+    }
+  }, interval);
 
   try {
     const formData = new FormData();
@@ -183,25 +232,97 @@ async function scanSources() {
       formData.append('documents', doc.file);
     });
 
-    const response = await fetch('/seller/ai-powered/scan', {
+    // Add a timeout wrapper for the fetch request.
+    // Keep this a bit higher than backend timeout to avoid false client-side timeouts.
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout. The scan is taking too long. Some websites may block automated requests.')), 180000); // 180 second timeout
+    });
+    
+    const fetchPromise = fetch('/seller/ai-powered/scan', {
       method: 'POST',
       body: formData
     });
+    
+    let response;
+    try {
+      response = await Promise.race([fetchPromise, timeoutPromise]);
+    } catch (fetchError) {
+      // Handle network errors (server not responding, CORS, etc.)
+      if (fetchError.message === 'Request timeout. The scan is taking too long. Some websites may block automated requests.') {
+        throw fetchError;
+      }
+      throw new Error(`Network error: ${fetchError.message || 'Could not connect to server. Please check if the server is running.'}`);
+    }
 
+    // Check if response is ok before trying to parse JSON
     if (!response.ok) {
-      throw new Error('Scan failed');
+      let errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // If JSON parsing fails, use the status text
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    
+    // Check if the response indicates an error
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to scan sources');
+    }
+    
     identifiedAssets = data.assets || [];
+    
+    // Complete progress bar to 100%
+    clearInterval(progressInterval);
+    progressBar.style.width = '100%';
+    progressText.textContent = 'Complete!';
+    
+    // Small delay to show completion, then display results
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     displayAssets(identifiedAssets);
     
   } catch (error) {
     console.error('Error scanning sources:', error);
-    alert('Failed to scan sources. Please try again.');
+    
+    // Stop progress animation
+    clearInterval(progressInterval);
+    
+    const errorMessage = error.message || 'Failed to scan sources. Please try again.';
+    
+    // Show error state on progress bar
+    progressBar.style.background = 'var(--danger, #ef4444)';
+    progressText.textContent = 'Error occurred';
+    progressText.style.color = 'var(--danger, #ef4444)';
+    
+    // Small delay before showing error message
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Display error in the assets container
+    assetsContainer.innerHTML = `
+      <div style="padding: 24px; background: var(--danger-bg, #fee); border: 1px solid var(--danger, #f00); border-radius: 8px; color: var(--danger-text, #c00);">
+        <div style="font-weight: 600; margin-bottom: 8px;">Error Scanning Sources</div>
+        <div style="font-size: 0.875rem;">${errorMessage}</div>
+        ${errorMessage.includes('403') || errorMessage.includes('blocking') ? 
+          '<div style="margin-top: 12px; font-size: 0.875rem; color: var(--muted);">Some websites block automated requests. You may need to manually enter the product information.</div>' : ''}
+      </div>
+    `;
   } finally {
     scanBtn.disabled = false;
+    
+    // Reset progress bar after a delay (if not already hidden)
+    setTimeout(() => {
+      if (loadingIndicator.style.display === 'none') {
+        progressBar.style.width = '0%';
+        progressBar.style.background = 'linear-gradient(90deg, var(--brand, #3b82f6), var(--brand-light, #60a5fa))';
+        progressText.textContent = 'Initializing...';
+        progressText.style.color = 'var(--muted)';
+      }
+    }, 1000);
+    
     loadingIndicator.style.display = 'none';
   }
 }
@@ -230,6 +351,7 @@ function displayAssets(assets) {
             <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Part #</th>
             <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Description</th>
             <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Price</th>
+            <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Images</th>
             <th style="padding: 12px; text-align: left; font-size: 0.875rem; color: var(--muted);">Specs</th>
           </tr>
         </thead>
@@ -253,6 +375,19 @@ function displayAssets(assets) {
       asset.manufacturer ? `Mfr: ${asset.manufacturer}` : null
     ].filter(Boolean).join('; ') || asset.specifications || 'N/A';
     
+    // Display images
+    const images = asset.images || [];
+    const imagesDisplay = images.length > 0 
+      ? `<div style="display: flex; gap: 4px; flex-wrap: wrap;">
+           ${images.slice(0, 3).map(imgUrl => `
+             <img src="${imgUrl}" alt="Product image" 
+                  onerror="this.style.display='none';"
+                  style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);" />
+           `).join('')}
+           ${images.length > 3 ? `<span style="font-size: 0.75rem; color: var(--muted); align-self: center;">+${images.length - 3}</span>` : ''}
+         </div>`
+      : '<span style="font-size: 0.875rem; color: var(--muted);">None</span>';
+    
     tableHTML += `
       <tr style="border-bottom: 1px solid var(--border);">
         <td style="padding: 12px;">
@@ -269,6 +404,7 @@ function displayAssets(assets) {
         <td style="padding: 12px; font-size: 0.875rem; color: var(--muted);">${asset.partNumber || asset.part_number || asset.sku || 'N/A'}</td>
         <td style="padding: 12px; font-size: 0.875rem; color: var(--muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis;" title="${(asset.description || '').replace(/"/g, '&quot;')}">${asset.description || 'N/A'}</td>
         <td style="padding: 12px; font-size: 0.875rem; color: var(--muted);">${priceDisplay}</td>
+        <td style="padding: 12px; font-size: 0.875rem;">${imagesDisplay}</td>
         <td style="padding: 12px; font-size: 0.875rem; color: var(--muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis;" title="${specsDisplay.replace(/"/g, '&quot;')}">${specsDisplay}</td>
       </tr>
     `;
@@ -316,12 +452,24 @@ async function createSelectedListings() {
     }
 
     const data = await response.json();
-    alert(`Successfully created ${data.created} draft listing(s)!`);
-    window.location.href = '/seller/dashboard';
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to create listings');
+    }
+    
+    // Redirect based on number of listings created
+    if (data.created === 1 && data.listings && data.listings.length === 1) {
+      // Single listing: redirect to edit page
+      const listingId = data.listings[0].id;
+      window.location.href = `/dpp/${listingId}/edit`;
+    } else {
+      // Multiple listings: redirect to marketplace
+      window.location.href = '/marketplace';
+    }
     
   } catch (error) {
     console.error('Error creating listings:', error);
-    alert('Failed to create listings. Please try again.');
+    alert(`Failed to create listings: ${error.message || 'Please try again.'}`);
   }
 }
 

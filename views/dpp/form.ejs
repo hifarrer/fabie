@@ -43,6 +43,61 @@
 
     <div class="card" style="margin-bottom: 18px">
       <div class="pad">
+        <div class="form-section-title">Images</div>
+        <div class="field">
+          <label>Product Images</label>
+          <p class="p" style="color: var(--muted); font-size: 0.875rem; margin-bottom: 12px;">
+            Add image URLs to display product images. You can add, edit, or remove images.
+          </p>
+          
+          <div id="images-container" style="margin-bottom: 12px;">
+            <!-- Images will be displayed here -->
+            <% 
+              // Server-side fallback: render images if they exist
+              const existingImages = dpp?.images || [];
+              const imagesToRender = Array.isArray(existingImages) ? existingImages : 
+                                    (typeof existingImages === 'string' ? JSON.parse(existingImages || '[]') : []);
+              
+              if (imagesToRender.length > 0) {
+                imagesToRender.forEach((url, index) => {
+                  if (url && typeof url === 'string' && url.trim()) {
+            %>
+            <div class="image-item" data-index="<%= index %>" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--panel); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+              <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                  <img src="<%= url %>" alt="Product image <%= index + 1 %>" 
+                       onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                       style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; background: var(--bg);" />
+                  <div style="display: none; width: 60px; height: 60px; background: var(--bg); border-radius: 4px; align-items: center; justify-content: center; color: var(--muted); font-size: 0.75rem;">No Image</div>
+                </div>
+                <input type="text" class="input image-url-input" value="<%= url %>" 
+                       data-index="<%= index %>"
+                       style="flex: 1; font-size: 0.875rem;" />
+              </div>
+              <button type="button" class="remove-image-btn" data-index="<%= index %>"
+                      style="background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
+                Remove
+              </button>
+            </div>
+            <% 
+                  }
+                });
+              }
+            %>
+          </div>
+          
+          <div class="row" style="gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="new-image-url" class="input" placeholder="https://example.com/image.jpg" style="flex: 1;" />
+            <button type="button" class="btn" onclick="addImage()">Add Image</button>
+          </div>
+          
+          <input type="hidden" id="images-input" name="images" value="" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 18px">
+      <div class="pad">
         <div class="form-section-title">Seller Information</div>
         <div class="form-grid cols-2">
           <div class="field">
@@ -196,5 +251,181 @@
     </div>
   </form>
 </section>
+
+<script>
+// Image management
+<%
+  // Ensure images is always an array
+  let imagesArray = [];
+  if (dpp && dpp.images) {
+    if (Array.isArray(dpp.images)) {
+      imagesArray = dpp.images;
+    } else if (typeof dpp.images === 'string') {
+      try {
+        imagesArray = JSON.parse(dpp.images);
+      } catch (e) {
+        imagesArray = [];
+      }
+    }
+  }
+%>
+let images = <%= JSON.stringify(imagesArray) %>;
+
+console.log('Initial images:', images); // Debug log
+
+function updateImagesDisplay() {
+  const container = document.getElementById('images-container');
+  const hiddenInput = document.getElementById('images-input');
+  
+  if (!container || !hiddenInput) {
+    console.error('Images container or input not found');
+    return;
+  }
+  
+  // Ensure images is an array
+  if (!Array.isArray(images)) {
+    images = [];
+  }
+  
+  // Filter out empty/null/undefined URLs
+  images = images.filter(url => url && typeof url === 'string' && url.trim().length > 0);
+  
+  // Update hidden input with JSON
+  hiddenInput.value = JSON.stringify(images);
+  
+  if (images.length === 0) {
+    container.innerHTML = '<div class="p" style="color: var(--muted); text-align: center; padding: 24px; border: 1px dashed var(--border); border-radius: 8px;">No images added yet. Add image URLs above.</div>';
+    return;
+  }
+  
+  container.innerHTML = images.map((url, index) => {
+    // Escape URL for HTML
+    const escapedUrl = url.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return `
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--panel); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+        <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+          <img src="${escapedUrl}" alt="Product image ${index + 1}" 
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+               style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; background: var(--bg);" />
+          <div style="display: none; width: 60px; height: 60px; background: var(--bg); border-radius: 4px; align-items: center; justify-content: center; color: var(--muted); font-size: 0.75rem;">No Image</div>
+        </div>
+        <input type="text" class="input" value="${escapedUrl}" 
+               onchange="updateImage(${index}, this.value)"
+               style="flex: 1; font-size: 0.875rem;" />
+      </div>
+      <button type="button" onclick="removeImage(${index})" 
+              style="background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
+        Remove
+      </button>
+    </div>
+    `;
+  }).join('');
+}
+
+function addImage() {
+  const input = document.getElementById('new-image-url');
+  if (!input) {
+    console.error('New image URL input not found');
+    return;
+  }
+  
+  const url = input.value.trim();
+  
+  if (!url) {
+    alert('Please enter an image URL');
+    return;
+  }
+  
+  // Basic URL validation
+  try {
+    new URL(url);
+  } catch (e) {
+    alert('Please enter a valid URL');
+    return;
+  }
+  
+  if (!Array.isArray(images)) {
+    images = [];
+  }
+  
+  images.push(url);
+  input.value = '';
+  updateImagesDisplay();
+}
+
+function updateImage(index, newUrl) {
+  if (!Array.isArray(images)) {
+    images = [];
+  }
+  
+  if (index >= 0 && index < images.length) {
+    images[index] = newUrl.trim();
+    updateImagesDisplay();
+  }
+}
+
+function removeImage(index) {
+  if (!Array.isArray(images)) {
+    images = [];
+  }
+  
+  if (index >= 0 && index < images.length) {
+    images.splice(index, 1);
+    updateImagesDisplay();
+  }
+}
+
+// Sync server-rendered images with JavaScript state
+function syncServerRenderedImages() {
+  const serverRenderedItems = document.querySelectorAll('.image-item');
+  if (serverRenderedItems.length > 0) {
+    images = [];
+    serverRenderedItems.forEach(item => {
+      const input = item.querySelector('.image-url-input');
+      if (input && input.value) {
+        images.push(input.value);
+      }
+    });
+    console.log('Synced server-rendered images:', images);
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, initializing images display');
+  console.log('Initial images from server:', images);
+  
+  // Sync with server-rendered images first
+  syncServerRenderedImages();
+  
+  // Then update display
+  updateImagesDisplay();
+  
+  // Attach event listeners to server-rendered elements
+  document.querySelectorAll('.image-url-input').forEach(input => {
+    input.addEventListener('change', function() {
+      const index = parseInt(this.dataset.index);
+      updateImage(index, this.value);
+    });
+  });
+  
+  document.querySelectorAll('.remove-image-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = parseInt(this.dataset.index);
+      removeImage(index);
+    });
+  });
+});
+
+// Also try to initialize immediately (in case DOMContentLoaded already fired)
+if (document.readyState === 'loading') {
+  // DOM hasn't finished loading yet
+} else {
+  // DOM is already ready
+  syncServerRenderedImages();
+  updateImagesDisplay();
+}
+</script>
 
 
