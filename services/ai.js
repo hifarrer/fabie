@@ -232,8 +232,8 @@ class AIService {
   async fetchWebsiteContent(url) {
     let browser = null;
     try {
-      const urlObj = new URL(url);
       console.log(`Fetching content from URL using Puppeteer: ${url}`);
+      const urlObj = new URL(url);
       
       // Launch browser with stealth plugin
       try {
@@ -272,14 +272,45 @@ class AIService {
         deviceScaleFactor: 1
       });
       
-      // Set user agent
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      // Enhanced stealth: Remove webdriver property and other automation indicators
+      await page.evaluateOnNewDocument(() => {
+        // Remove webdriver property
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => false,
+        });
+        
+        // Override permissions
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+          parameters.name === 'notifications' ?
+            Promise.resolve({ state: Notification.permission }) :
+            originalQuery(parameters)
+        );
+        
+        // Mock plugins
+        Object.defineProperty(navigator, 'plugins', {
+          get: () => [1, 2, 3, 4, 5],
+        });
+        
+        // Mock languages
+        Object.defineProperty(navigator, 'languages', {
+          get: () => ['en-US', 'en'],
+        });
+        
+        // Override chrome property
+        window.chrome = {
+          runtime: {},
+        };
+      });
       
-      // Set additional headers
+      // Use more recent Chrome user agent
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+      
+      // Set additional headers with referrer for better authenticity
       await page.setExtraHTTPHeaders({
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
         'Sec-Fetch-Dest': 'document',
@@ -287,13 +318,19 @@ class AIService {
         'Sec-Fetch-Site': 'none',
         'Sec-Fetch-User': '?1',
         'Cache-Control': 'max-age=0',
-        'DNT': '1'
+        'DNT': '1',
+        'Referer': `${urlObj.protocol}//${urlObj.host}/`
       });
       
       // Navigate with timeout - use 'domcontentloaded' for faster, more reliable loading
       console.log(`Navigating to ${url}...`);
+      
+      // Small delay to mimic human behavior (helps avoid detection)
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+      
+      let response = null;
       try {
-        await page.goto(url, { 
+        response = await page.goto(url, { 
           waitUntil: 'domcontentloaded', // Changed from 'networkidle2' for better reliability
           timeout: 45000 // 45 second timeout (reduced from 60s for faster failure detection)
         });
@@ -301,17 +338,37 @@ class AIService {
         // If navigation fails, try with a shorter timeout
         console.log(`Navigation with domcontentloaded failed, trying load event...`);
         try {
-          await page.goto(url, { 
+          response = await page.goto(url, { 
             waitUntil: 'load', 
             timeout: 30000 // 30 second timeout (reduced from 40s)
           });
         } catch (loadError) {
           // If both fail, try with commit (fastest option)
           console.log(`Navigation with load failed, trying commit event...`);
-          await page.goto(url, { 
+          response = await page.goto(url, { 
             waitUntil: 'commit', 
             timeout: 20000 // 20 second timeout
           });
+        }
+      }
+      
+      // Check response status for 403/404 errors
+      if (response) {
+        const status = response.status();
+        if (status === 403) {
+          await browser.close();
+          browser = null;
+          throw new Error(`Access forbidden (403). The website (${urlObj.host}) may be blocking automated requests. Some websites require manual data entry.`);
+        }
+        if (status === 404) {
+          await browser.close();
+          browser = null;
+          throw new Error(`Page not found (404). The URL may be invalid or the page may have been removed.`);
+        }
+        if (status >= 500) {
+          await browser.close();
+          browser = null;
+          throw new Error(`Server error (${status}). The website may be temporarily unavailable.`);
         }
       }
       
@@ -652,10 +709,10 @@ class AIService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      // Browser-like headers
+      // Browser-like headers with updated user agent
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
           'Accept-Language': 'en-US,en;q=0.9',
           'Accept-Encoding': 'gzip, deflate, br',
@@ -665,12 +722,16 @@ class AIService {
           'Upgrade-Insecure-Requests': '1',
           'Sec-Fetch-Dest': 'document',
           'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-Site': 'same-origin',
           'Sec-Fetch-User': '?1',
           'Cache-Control': 'max-age=0',
-          'DNT': '1'
+          'DNT': '1',
+          'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"Windows"'
         },
-        signal: controller.signal
+        signal: controller.signal,
+        redirect: 'follow'
       });
       
       clearTimeout(timeoutId);
@@ -1428,42 +1489,70 @@ ${trimmedContent}${imageContext}`;
     const allImageUrls = [];
     const fetchErrors = [];
     for (const url of urls) {
-      try {
-        console.log(`Fetching content from URL: ${url}`);
-        const startTime = Date.now();
-        
-        // Add a wrapper timeout to catch any hanging operations.
-        // Keep this bounded so the frontend request does not time out first.
-        const urlFetchPromise = this.fetchWebsiteContent(url);
-        const urlFetchTimeoutMs = parseInt(process.env.AI_FETCH_URL_TIMEOUT_MS || '60000', 10);
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error(`Operation timeout: The request took longer than ${urlFetchTimeoutMs}ms`)), urlFetchTimeoutMs);
-        });
-        
-        const result = await Promise.race([urlFetchPromise, timeoutPromise]);
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-        
-        if (result && result.text) {
-          console.log(`Fetched ${result.text.length} characters from ${url} in ${elapsed}s`);
-          allContent += `\n\n--- Content from ${url} ---\n\n${result.text}`;
-          
-          // Collect image URLs
-          if (result.imageUrls && result.imageUrls.length > 0) {
-            console.log(`Found ${result.imageUrls.length} images from ${url}`);
-            allImageUrls.push(...result.imageUrls);
+      let result = null;
+      let lastError = null;
+      const maxRetries = 1; // Try fallback once for 403 errors
+      
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            console.log(`Trying fallback fetch method for URL: ${url} (attempt ${attempt})`);
+            // Wait a bit before retry to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            result = await this.fetchWebsiteContentFallback(url);
+          } else {
+            console.log(`Fetching content from URL: ${url}`);
+            const startTime = Date.now();
+            
+            // Add a wrapper timeout to catch any hanging operations.
+            // Keep this bounded so the frontend request does not time out first.
+            const urlFetchPromise = this.fetchWebsiteContent(url);
+            const urlFetchTimeoutMs = parseInt(process.env.AI_FETCH_URL_TIMEOUT_MS || '60000', 10);
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error(`Operation timeout: The request took longer than ${urlFetchTimeoutMs}ms`)), urlFetchTimeoutMs);
+            });
+            
+            result = await Promise.race([urlFetchPromise, timeoutPromise]);
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+            console.log(`Fetched in ${elapsed}s`);
           }
-        } else {
-          console.log(`No content fetched from ${url}`);
-          fetchErrors.push({ url, error: 'No content returned from URL' });
-        }
-      } catch (error) {
-        console.error(`Error processing URL ${url}:`, error);
-        const errorMsg = error.message || 'Unknown error';
-        fetchErrors.push({ url, error: errorMsg });
-        
-        // For Amazon specifically, provide helpful message
-        if (url.includes('amazon.com')) {
-          console.error(`Amazon URL failed. Amazon has strict bot protection that blocks automated requests.`);
+          
+          if (result && result.text) {
+            console.log(`Fetched ${result.text.length} characters from ${url}${attempt > 0 ? ' (using fallback)' : ''}`);
+            allContent += `\n\n--- Content from ${url}${attempt > 0 ? ' (fallback)' : ''} ---\n\n${result.text}`;
+            
+            // Collect image URLs
+            if (result.imageUrls && result.imageUrls.length > 0) {
+              console.log(`Found ${result.imageUrls.length} images from ${url}`);
+              allImageUrls.push(...result.imageUrls);
+            }
+            break; // Success, exit retry loop
+          } else {
+            console.log(`No content fetched from ${url}`);
+            if (attempt === maxRetries) {
+              fetchErrors.push({ url, error: 'No content returned from URL' });
+            }
+          }
+        } catch (error) {
+          lastError = error;
+          const errorMsg = error.message || 'Unknown error';
+          console.error(`Error processing URL ${url} (attempt ${attempt + 1}/${maxRetries + 1}):`, errorMsg);
+          
+          // For 403 errors, try fallback method on retry
+          if ((errorMsg.includes('403') || errorMsg.includes('forbidden')) && attempt < maxRetries) {
+            console.log(`403 error detected, will try fallback fetch method on next attempt...`);
+            continue; // Try fallback on next iteration
+          }
+          
+          // If this was the last attempt, record the error
+          if (attempt === maxRetries) {
+            fetchErrors.push({ url, error: errorMsg });
+            
+            // For Amazon specifically, provide helpful message
+            if (url.includes('amazon.com')) {
+              console.error(`Amazon URL failed. Amazon has strict bot protection that blocks automated requests.`);
+            }
+          }
         }
       }
     }
