@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "seed": "node seed/seed.js",
-    "postinstall": "node -e \"try { require('puppeteer').executablePath(); } catch(e) { console.log('Installing Chrome for Puppeteer...'); require('child_process').execSync('npx puppeteer browsers install chrome', {stdio: 'inherit'}); }\""
+    "postinstall": "npx puppeteer browsers install chrome || echo 'Chrome installation skipped or failed'"
   },
   "keywords": [
     "marketplace",

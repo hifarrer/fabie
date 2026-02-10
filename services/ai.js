@@ -248,28 +248,111 @@ class AIService {
       try {
         console.log(`Launching Puppeteer browser...`);
         
-        // Configure Puppeteer cache directory for Render if needed
-        if (process.env.RENDER && !process.env.PUPPETEER_CACHE_DIR) {
-          // On Render, use a writable directory
-          process.env.PUPPETEER_CACHE_DIR = '/tmp/.cache/puppeteer';
+        // Configure Puppeteer cache directory for Render
+        // The build command installs Chrome to the default location
+        if (process.env.RENDER) {
+          // Use the default Render cache location where Chrome should be installed
+          const defaultCache = '/opt/render/.cache/puppeteer';
+          process.env.PUPPETEER_CACHE_DIR = defaultCache;
+          console.log(`Using Puppeteer cache directory: ${defaultCache}`);
+          
+          // Try to find and use Chrome explicitly if it exists
+          try {
+            const fs = await import('fs');
+            const path = await import('path');
+            
+            // Common locations where Chrome might be installed
+            const possibleDirs = [
+              `${defaultCache}/chrome`,
+              `${defaultCache}`,
+              '/tmp/.cache/puppeteer/chrome'
+            ];
+            
+            let chromePath = null;
+            for (const dir of possibleDirs) {
+              try {
+                if (fs.existsSync(dir)) {
+                  // Look for chrome executable in subdirectories
+                  const entries = fs.readdirSync(dir, { withFileTypes: true });
+                  for (const entry of entries) {
+                    if (entry.isDirectory()) {
+                      const chromeExe = path.join(dir, entry.name, 'chrome-linux64', 'chrome');
+                      if (fs.existsSync(chromeExe)) {
+                        chromePath = chromeExe;
+                        console.log(`Found Chrome at: ${chromePath}`);
+                        break;
+                      }
+                    }
+                  }
+                  if (chromePath) break;
+                }
+              } catch (e) {
+                // Continue searching
+              }
+            }
+            
+            // If we found Chrome, use it explicitly
+            if (chromePath) {
+              browser = await puppeteer.launch({
+                executablePath: chromePath,
+                headless: true,
+                args: [
+                  '--no-sandbox',
+                  '--disable-setuid-sandbox',
+                  '--disable-blink-features=AutomationControlled',
+                  '--disable-dev-shm-usage',
+                  '--disable-accelerated-2d-canvas',
+                  '--no-first-run',
+                  '--no-zygote',
+                  '--disable-gpu',
+                  '--single-process'
+                ],
+                timeout: 60000
+              });
+              console.log(`Puppeteer browser launched successfully with explicit Chrome path`);
+            } else {
+              throw new Error('Chrome not found in expected locations');
+            }
+          } catch (findError) {
+            console.log(`Could not find explicit Chrome path: ${findError.message}`);
+            console.log(`Letting Puppeteer auto-detect Chrome...`);
+            // Fall through to default launch
+            browser = await puppeteer.launch({
+              headless: true,
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu',
+                '--single-process'
+              ],
+              timeout: 60000
+            });
+            console.log(`Puppeteer browser launched successfully (auto-detected)`);
+          }
+        } else {
+          // Not on Render, use default behavior
+          browser = await puppeteer.launch({
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-blink-features=AutomationControlled',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--disable-gpu',
+              '--single-process'
+            ],
+            timeout: 60000
+          });
+          console.log(`Puppeteer browser launched successfully`);
         }
-        
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--single-process' // Helps on some cloud platforms
-          ],
-          timeout: 60000 // 60 second timeout for browser launch (increased for slower systems)
-        });
-        console.log(`Puppeteer browser launched successfully`);
       } catch (launchError) {
         console.error(`Failed to launch Puppeteer browser:`, launchError.message || launchError);
         console.error(`Launch error stack:`, launchError.stack);
