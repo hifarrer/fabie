@@ -11,9 +11,10 @@ services:
       - key: PUPPETEER_CACHE_DIR
         value: /opt/render/.cache/puppeteer
       # Puppeteer configuration
+      # IMPORTANT: Set to 'true' if using FREE tier (Puppeteer won't work on free tier)
       # If sites are blocking Render's IPs, set this to 'true' to use fallback fetch only
       - key: USE_FETCH_FALLBACK_ONLY
-        value: false
+        value: true  # Set to true for free tier, false for paid tier
       # Or force fallback for specific problematic sites
       - key: FORCE_FETCH_FALLBACK
         value: false
