@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: fabie-mvp
+    env: node
+    buildCommand: npm install && npx puppeteer browsers install chrome
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Puppeteer cache directory (writable location on Render)
+      - key: PUPPETEER_CACHE_DIR
+        value: /tmp/.cache/puppeteer
+      # Puppeteer configuration
+      # If sites are blocking Render's IPs, set this to 'true' to use fallback fetch only
+      - key: USE_FETCH_FALLBACK_ONLY
+        value: false
+      # Or force fallback for specific problematic sites
+      - key: FORCE_FETCH_FALLBACK
+        value: false

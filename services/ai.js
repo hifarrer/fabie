@@ -235,8 +235,25 @@ class AIService {
       console.log(`Fetching content from URL using Puppeteer: ${url}`);
       const urlObj = new URL(url);
       
+      // Check if we should skip Puppeteer and use fallback directly (for sites that block cloud IPs)
+      const useFallbackOnly = process.env.USE_FETCH_FALLBACK_ONLY === 'true' || 
+                             process.env.FORCE_FETCH_FALLBACK === 'true';
+      
+      if (useFallbackOnly) {
+        console.log(`Skipping Puppeteer, using fallback fetch only (env var set)`);
+        return await this.fetchWebsiteContentFallback(url);
+      }
+      
       // Launch browser with stealth plugin
       try {
+        console.log(`Launching Puppeteer browser...`);
+        
+        // Configure Puppeteer cache directory for Render if needed
+        if (process.env.RENDER && !process.env.PUPPETEER_CACHE_DIR) {
+          // On Render, use a writable directory
+          process.env.PUPPETEER_CACHE_DIR = '/tmp/.cache/puppeteer';
+        }
+        
         browser = await puppeteer.launch({
           headless: true,
           args: [
@@ -247,12 +264,15 @@ class AIService {
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--single-process' // Helps on some cloud platforms
           ],
           timeout: 60000 // 60 second timeout for browser launch (increased for slower systems)
         });
+        console.log(`Puppeteer browser launched successfully`);
       } catch (launchError) {
         console.error(`Failed to launch Puppeteer browser:`, launchError.message || launchError);
+        console.error(`Launch error stack:`, launchError.stack);
         // Fallback to regular fetch if Puppeteer fails
         console.log(`Falling back to regular fetch for ${url}`);
         return await this.fetchWebsiteContentFallback(url);
@@ -355,10 +375,14 @@ class AIService {
       // Check response status for 403/404 errors
       if (response) {
         const status = response.status();
+        console.log(`Page navigation response status: ${status}`);
+        
         if (status === 403) {
+          console.log(`403 detected from Puppeteer, closing browser and trying fallback...`);
           await browser.close();
           browser = null;
-          throw new Error(`Access forbidden (403). The website (${urlObj.host}) may be blocking automated requests. Some websites require manual data entry.`);
+          // Instead of throwing, return null to trigger fallback in calling code
+          throw new Error(`Access forbidden (403). The website (${urlObj.host}) may be blocking automated requests. Trying fallback method...`);
         }
         if (status === 404) {
           await browser.close();
@@ -680,17 +704,36 @@ class AIService {
         throw new Error(`Page not found (404). The URL may be invalid or the page may have been removed.`);
       }
       
+      // For 403 errors, automatically try fallback before giving up
       if (error.message.includes('403') || error.message.includes('forbidden')) {
-        throw new Error(`Access forbidden (403). The website (${new URL(url).host}) may be blocking automated requests. Some websites require manual data entry.`);
+        console.log(`403 error from Puppeteer, automatically trying fallback fetch for ${url}...`);
+        try {
+          const fallbackResult = await this.fetchWebsiteContentFallback(url);
+          console.log(`Fallback fetch succeeded for ${url}`);
+          return fallbackResult;
+        } catch (fallbackError) {
+          console.error(`Fallback fetch also failed for ${url}:`, fallbackError.message);
+          // If fallback also gets 403, it's likely IP blocking
+          if (fallbackError.message.includes('403') || fallbackError.message.includes('forbidden')) {
+            throw new Error(`Access forbidden (403). The website (${new URL(url).host}) is blocking requests from this server. This may be due to IP-based blocking on cloud hosting platforms. Consider using a proxy service or manual data entry.`);
+          }
+          throw fallbackError;
+        }
       }
       
       console.error(`Error fetching URL ${url}:`, error);
+      console.error(`Error details:`, {
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.substring(0, 500)
+      });
       
-      // If Puppeteer fails, try fallback to regular fetch
+      // If Puppeteer fails for other reasons, try fallback to regular fetch
       console.log(`Puppeteer failed, trying fallback fetch for ${url}`);
       try {
         return await this.fetchWebsiteContentFallback(url);
       } catch (fallbackError) {
+        console.error(`Fallback also failed:`, fallbackError.message);
         // If fallback also fails, throw the original error
         throw error;
       }
@@ -699,11 +742,13 @@ class AIService {
 
   /**
    * Fallback method using regular fetch if Puppeteer fails
+   * This method uses Node's native fetch which may have different IP/fingerprint
    */
   async fetchWebsiteContentFallback(url) {
     try {
       const urlObj = new URL(url);
-      console.log(`Using fallback fetch for: ${url}`);
+      console.log(`Using fallback fetch method for: ${url}`);
+      console.log(`Fallback method uses native fetch API (different from Puppeteer)`);
       
       // Create AbortController for timeout
       const controller = new AbortController();
@@ -736,9 +781,12 @@ class AIService {
       
       clearTimeout(timeoutId);
       
+      console.log(`Fallback fetch response status: ${response.status}`);
+      
       if (!response.ok) {
         if (response.status === 403) {
-          throw new Error(`Access forbidden (403). The website (${urlObj.host}) may be blocking automated requests.`);
+          console.error(`Fallback fetch got 403 from ${urlObj.host} - likely IP-based blocking`);
+          throw new Error(`Access forbidden (403). The website (${urlObj.host}) is blocking requests from this server. This may be due to IP-based blocking on cloud hosting platforms.`);
         } else if (response.status === 404) {
           throw new Error(`Page not found (404). The URL may be invalid or the page may have been removed.`);
         } else if (response.status === 429) {
@@ -747,6 +795,8 @@ class AIService {
           throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
         }
       }
+      
+      console.log(`Fallback fetch succeeded, reading response body...`);
 
       // Timeout for reading response body
       const readTimeout = new Promise((_, reject) => {
